@@ -1,5 +1,86 @@
-# Vue 3 + TypeScript + Vite
+# @tinkerbells/mobx-query-devtools
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Developer tools для визуализации и отладки MobX Query кеша.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Установка
+
+```bash
+npm install @tinkerbells/mobx-query-devtools --save-dev
+# или
+pnpm add -D @tinkerbells/mobx-query-devtools
+```
+
+## Использование
+
+Монтируйте DevTools только в dev режиме:
+
+```typescript
+import { MobxQuery } from '@tinkerbells/mobx-query';
+import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools';
+
+const cacheService = new MobxQuery({
+  enableAutoFetch: true,
+  fetchPolicy: 'cache-first'
+});
+
+// Только в dev режиме
+if (process.env.NODE_ENV === 'development') {
+  mountMobxQueryDevtools(cacheService, document.body);
+}
+```
+
+### API
+
+```typescript
+function mountMobxQueryDevtools(
+  client: MobxQuery,
+  target?: HTMLElement
+): () => void
+```
+
+**Параметры:**
+- `client` - экземпляр MobxQuery
+- `target` - DOM элемент для монтирования (по умолчанию: `document.body`)
+
+**Возвращает:** функцию для размонтирования DevTools
+
+### Пример с React
+
+```tsx
+import { useEffect } from 'react';
+import { cacheService } from './services/cache';
+import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools';
+
+function App() {
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const unmount = mountMobxQueryDevtools(cacheService);
+      return unmount;
+    }
+  }, []);
+
+  return <YourApp />;
+}
+```
+
+## Разработка
+
+```bash
+# Запуск dev-сервера для локальной разработки
+pnpm dev
+
+# Сборка библиотеки
+pnpm build
+```
+
+## Возможности
+
+- 📊 Визуализация всех queries и их состояний
+- 🔍 Инспектор данных кеша
+- ⚡ Реактивное обновление при изменении кеша
+- 🎨 Shadow DOM для изоляции стилей
+- 📦 Легковесная сборка (external dependencies)
+
+## Лицензия
+
+См. [LICENSE](../../packages/mobx-query/LICENSE)
