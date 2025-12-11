@@ -1,7 +1,23 @@
-dist
-lib
+.DS_Store
 node_modules
-storybook-static
+.turbo
+*.log
+dist
+dist-ssr
+*.local
+.env
+.cache
+server/dist
+public/dist
 
-/.idea/*
-yarn-error.log
+# Build outputs
+lib
+*.tsbuildinfo
+
+# Test outputs
+junit.xml
+coverage
+
+# Lock files (using pnpm)
+package-lock.json
+yarn.lock

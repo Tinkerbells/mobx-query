@@ -1,0 +1,25 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "lib/**"]
+    },
+    "lint": {},
+    "lint:types": {
+      "dependsOn": ["^build"]
+    },
+    "tests": {
+      "dependsOn": ["^build"]
+    },
+    "tests:ci": {
+      "dependsOn": ["^build"],
+      "outputs": ["junit.xml"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

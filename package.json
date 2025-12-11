@@ -1,37 +1,19 @@
 {
   "private": true,
-  "workspaces": [
-    "package"
-  ],
-  "devDependencies": {
-    "@astral/commitlint-config": "^2.2.0",
-    "@astral/eslint-config-react-ts": "^2.2.0",
-    "@astral/eslint-config-vitest": "^2.2.0",
-    "@astral/prettier-config": "^2.2.0",
-    "@semantic-release/changelog": "^6.0.1",
-    "@semantic-release/commit-analyzer": "^9.0.2",
-    "@semantic-release/exec": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^8.0.5",
-    "@semantic-release/release-notes-generator": "^10.0.3",
-    "commitlint": "^18.4.0",
-    "copyfiles": "^2.4.1",
-    "cross-env": "^7.0.3",
-    "eslint": "^8.53.0",
-    "eslint-plugin-prettier": "^5.0.1",
-    "husky": "^4.3.8",
-    "lint-staged": "^11.1.2",
-    "prettier": "^3.0.3",
-    "rimraf": "^3.0.2",
-    "semantic-release": "^19.0.5",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.7",
-    "vitest": "^1.0.2"
-  },
+  "name": "@tinkerbells/mobx-query-monorepo",
   "scripts": {
-    "lint": "npm run lint:all --workspaces --if-present",
-    "lint:types": "npm run lint:types --workspaces --if-present",
-    "tests": "npm run tests --workspaces --if-present",
-    "tests:ci": "npm run tests:ci --workspaces --if-present"
-  }
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:types": "turbo run lint:types",
+    "tests": "turbo run tests",
+    "tests:ci": "turbo run tests:ci",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "turbo": "^2.6.3"
+  },
+  "packageManager": "pnpm@10.23.0"
 }
