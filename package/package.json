@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "tsdown": "^0.17.2"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   }
 }
