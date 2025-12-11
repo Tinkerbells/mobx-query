@@ -32,16 +32,16 @@ const buildPackageJson = (basePackage, version) => {
     version,
     dependencies: updateInternalDeps(basePackage.dependencies, version),
     author: 'Astral.Soft',
-    license: 'MIT',
-    repository: {
-      type: 'git',
-      url: 'git+https://github.com/kaluga-astral/mobx-query',
-    },
-    bugs: {
-      url: 'https://github.com/kaluga-astral/mobx-query/issues',
-    },
-    sideEffects: false,
-    types: './index.d.ts',
+  license: 'MIT',
+  repository: {
+    type: 'git',
+    url: 'git+https://github.com/Tinkerbells/mobx-query',
+  },
+  bugs: {
+    url: 'https://github.com/Tinkerbells/mobx-query/issues',
+  },
+  sideEffects: false,
+  types: './index.d.ts',
     main: './index.js',
     module: './index.js',
     browser: './index.js',

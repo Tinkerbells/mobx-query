@@ -1,6 +1,6 @@
 module.exports = {
   branches: ['main', { name: 'dev', prerelease: 'dev' }],
-  repositoryUrl: 'https://github.com/kaluga-astral/mobx-query',
+  repositoryUrl: 'https://github.com/Tinkerbells/mobx-query',
   plugins: [
     [
       '@semantic-release/commit-analyzer',
