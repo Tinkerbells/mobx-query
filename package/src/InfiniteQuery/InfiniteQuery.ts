@@ -1,4 +1,4 @@
-import { action, computed, makeObservable, observable, when } from 'mobx';
+import { action, computed, makeObservable, when } from 'mobx';
 
 import type { FetchPolicy, QueryBaseActions, Sync, SyncParams } from '../types';
 import { AuxiliaryQuery } from '../AuxiliaryQuery';
@@ -13,13 +13,19 @@ export type InfiniteParams = {
   count: number;
 };
 
+export type InfiniteDataStorage<TResult> = DataStorage<{
+  data: TResult[];
+  offset: number;
+  isEndReached: boolean;
+}>;
+
 /**
  * Исполнитель запроса, ожидается,
  * что будет использоваться что-то возвращающее массив данных
  */
 export type InfiniteExecutor<TResult> = (
   params: InfiniteParams,
-) => Promise<Array<TResult>>;
+) => Promise<TResult[]>;
 
 export type InfiniteQueryParams<
   TResult,
@@ -52,7 +58,7 @@ export type InfiniteQueryParams<
   /**
    * Инстанс хранилища данных
    */
-  dataStorage: DataStorage<TResult[]>;
+  dataStorage: InfiniteDataStorage<TResult>;
   /**
    * Инстанс хранилища фоновых статусов
    */
@@ -76,16 +82,11 @@ export class InfiniteQuery<
   >
   extends QueryContainer<
     TError,
-    AuxiliaryQuery<Array<TResult>, TError>,
+    AuxiliaryQuery<TResult[], TError>,
     TIsBackground
   >
-  implements QueryBaseActions<Array<TResult>, TError>
+  implements QueryBaseActions<TResult[], TError>
 {
-  /**
-   * Счетчик отступа для инфинити запроса
-   */
-  private offset: number = 0;
-
   /**
    * Количество запрашиваемых элементов
    */
@@ -94,12 +95,7 @@ export class InfiniteQuery<
   /**
    * Хранилище данных, для обеспечения возможности синхронизации данных между разными инстансами
    */
-  private storage: DataStorage<TResult[]>;
-
-  /**
-   * Флаг того, что мы достигли предела запрашиваемых элементов
-   */
-  public isEndReached: boolean = false;
+  private storage: InfiniteDataStorage<TResult>;
 
   /**
    * Обработчик ошибки, вызываемый по умолчанию
@@ -137,7 +133,7 @@ export class InfiniteQuery<
     super(
       statusStorage,
       backgroundStatusStorage,
-      new AuxiliaryQuery<Array<TResult>, TError>(
+      new AuxiliaryQuery<TResult[], TError>(
         statusStorage,
         backgroundStatusStorage,
       ),
@@ -152,13 +148,14 @@ export class InfiniteQuery<
 
     makeObservable(this as ThisType<this>, {
       data: computed,
+      computedData: computed,
       infiniteExecutor: computed,
       forceUpdate: action,
       async: action,
       sync: action,
       fetchMore: action,
       submitSuccess: action,
-      isEndReached: observable,
+      isEndReached: computed,
     });
   }
 
@@ -167,22 +164,33 @@ export class InfiniteQuery<
   }
 
   /**
+   * Счетчик отступа для инфинити запроса
+   */
+  private get offset() {
+    return this.storage.data?.offset ?? 0;
+  }
+
+  /**
    * Обработчик успешного запроса, проверяет что мы достигли предела
    */
-  private submitSuccess = (
-    result: TResult[],
-    onSuccess?: (res: TResult[]) => void,
-    isIncrement?: boolean,
-  ) => {
-    onSuccess?.(result);
+  private submitSuccess = (result: TResult[], isEndReached: boolean) => {
+    this.storage.setData((current) => ({
+      offset: current?.offset,
+      data: result,
+      isEndReached,
+    }));
 
-    if (isIncrement && this.storage.hasData) {
-      this.storage.setData([...this.storage.data!, ...result]);
-    } else {
-      this.storage.setData(result);
-      this.submitValidity?.();
-    }
+    this.submitValidity?.();
+  };
 
+  /**
+   * Флаг того, что мы достигли предела запрашиваемых элементов
+   */
+  public get isEndReached() {
+    return Boolean(this.storage.data?.isEndReached);
+  }
+
+  private calcIsEndReachedByResult = (result: TResult[]) => {
     // убеждаемся что результат запроса действительно массив,
     // и если количество элементов в ответе меньше,
     // чем запрашивалось, значит у бэка их больше нет,
@@ -190,25 +198,34 @@ export class InfiniteQuery<
     // когда последняя отданная страница содержит ровно то количество,
     // сколько может содержать страница, а следующая уже просто пустая.
     if (Array.isArray(result) && result.length < this.incrementCount) {
-      // включаем флаг достижения предела
-      this.isEndReached = true;
+      return true;
     }
+
+    return false;
   };
 
   /**
    * Форс метод для установки данных
    */
-  public forceUpdate = (data: TResult[]) => {
-    this.offset = 0;
-    this.isEndReached = false;
+  public forceUpdate = (
+    param: TResult[] | ((data?: TResult[]) => TResult[]),
+  ) => {
     this.auxiliary.submitSuccess();
-    this.submitSuccess(data);
+
+    if (typeof param === 'function') {
+      this.submitSuccess(
+        (param as (data?: TResult[]) => TResult[])(this.storage.data?.data),
+        this.isEndReached,
+      );
+    } else {
+      this.submitSuccess(param, this.isEndReached);
+    }
   };
 
   /**
    * Метод для обогащения параметров текущими значениями для инфинити
    */
-  private get infiniteExecutor(): () => Promise<Array<TResult>> {
+  private get infiniteExecutor(): () => Promise<TResult[]> {
     return () =>
       this.executor({
         offset: this.offset,
@@ -230,43 +247,66 @@ export class InfiniteQuery<
     // если мы еще не достигли предела
     if (!this.isEndReached && this.storage.data) {
       // прибавляем к офсету число запрашиваемых элементов
-      this.offset += this.incrementCount;
+      this.storage.setData((current) => ({
+        offset: (current?.offset ?? 0) + this.incrementCount,
+        data: current?.data,
+        isEndReached: Boolean(current?.isEndReached),
+      }));
 
       // запускаем запрос с последними параметрами, и флагом необходимости инкремента
       this.auxiliary
         .getUnifiedPromise(this.infiniteExecutor, (resData) => {
-          this.submitSuccess(resData, undefined, true);
+          this.submitSuccess(
+            [...(this.storage.data?.data ?? []), ...resData],
+            this.calcIsEndReachedByResult(resData),
+          );
         })
-        .catch((e) => this.defaultOnError?.(e));
+        .catch((e: TError) => {
+          this.defaultOnError?.(e);
+        });
     }
   };
 
   /**
    * Синхронный метод получения данных
    */
-  public sync: Sync<Array<TResult>, TError> = (params) => {
+  public sync: Sync<TResult[], TError> = (params) => {
     const isInstanceAllow = !(this.isLoading || this.isSuccess);
 
     if (this.isNetworkOnly || this.auxiliary.isInvalid || isInstanceAllow) {
       this.proceedSync(params);
+
+      return;
+    }
+
+    if (this.isSuccess) {
+      params?.onSuccess?.(this.storage.data?.data as TResult[]);
     }
   };
 
   /**
    * Метод для переиспользования синхронной логики запроса
    */
-  private proceedSync: Sync<Array<TResult>, TError> = ({
+  private proceedSync: Sync<TResult[], TError> = ({
     onSuccess,
     onError,
   } = {}) => {
-    this.offset = 0;
-    this.isEndReached = false;
+    this.storage.setData((current) => ({
+      offset: 0,
+      data: current?.data,
+      isEndReached: false,
+    }));
 
     this.auxiliary
       .getUnifiedPromise(this.infiniteExecutor, (resData) => {
-        this.submitSuccess(resData, onSuccess);
+        onSuccess?.(resData);
+        this.submitSuccess(resData, this.calcIsEndReachedByResult(resData));
       })
       .catch((e: TError) => {
+        if (!this.background) {
+          this.storage.cleanData();
+        }
+
         if (onError) {
           onError(e);
         } else {
@@ -283,17 +323,23 @@ export class InfiniteQuery<
    */
   public async = () => {
     if (!this.isNetworkOnly && this.isSuccess && !this.auxiliary.isInvalid) {
-      return Promise.resolve(this.storage.data!);
+      return Promise.resolve(this.storage.data?.data as TResult[]);
     }
 
-    this.offset = 0;
-    this.isEndReached = false;
+    this.storage.setData((current) => ({
+      offset: 0,
+      data: current?.data,
+      isEndReached: false,
+    }));
 
-    return this.auxiliary.getUnifiedPromise(
-      this.infiniteExecutor,
-      this.submitSuccess,
+    return this.auxiliary.getUnifiedPromise(this.infiniteExecutor, (data) =>
+      this.submitSuccess(data, this.calcIsEndReachedByResult(data)),
     );
   };
+
+  private get computedData() {
+    return this.storage.data?.data;
+  }
 
   /**
    * Вычисляемое свойство, содержащее реактивные данные,
@@ -315,6 +361,6 @@ export class InfiniteQuery<
     }
 
     // возвращаем имеющиеся данные
-    return this.storage.data;
+    return this.computedData;
   }
 }

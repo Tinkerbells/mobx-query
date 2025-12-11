@@ -8,7 +8,13 @@ export default defineConfig({
   tsconfig: './tsconfig.build.json',
   platform: 'neutral',
   target: 'es2018',
-  external: ['mobx'],
+  external: [
+    'mobx',
+    '@astral/utils',
+    '@emotion/hash',
+    'fast-json-stable-stringify',
+    'utility-types',
+  ],
   outExtensions: () => ({
     js: '.js',
   }),

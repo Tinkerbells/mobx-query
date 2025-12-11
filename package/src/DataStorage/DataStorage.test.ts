@@ -33,6 +33,25 @@ describe('DataStorage', () => {
       storage.setData(['foo']);
       expect(storage.data).toStrictEqual(['foo']);
     });
+
+    it('Данные можно обновлять через функцию', () => {
+      const storage = createStorage();
+
+      storage.setData(['foo']);
+      storage.setData((current) => [...(current ?? []), 'bar']);
+      expect(storage.data).toStrictEqual(['foo', 'bar']);
+    });
+  });
+
+  describe('При очистке данных', () => {
+    it('Флаг наличия данных выключается и данные удаляются', () => {
+      const storage = createStorage();
+
+      storage.setData(['foo']);
+      storage.cleanData();
+      expect(storage.data).toBeUndefined();
+      expect(storage.hasData).toBeFalsy();
+    });
   });
 });
 

@@ -599,5 +599,13 @@ describe('Query', () => {
       expect(query.isSuccess).toBeTruthy();
       expect(query.isError).toBeFalsy();
     });
+
+    it('Данные можно обновлять функцией', () => {
+      const { query } = createQuery();
+
+      query.forceUpdate('foo');
+      query.forceUpdate((current) => `${current}-bar`);
+      expect(query.data).toBe('foo-bar');
+    });
   });
 });

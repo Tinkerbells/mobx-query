@@ -29,6 +29,7 @@ export abstract class QueryContainer<
       isIdle: computed,
       isLoading: computed,
       isSuccess: computed,
+      status: computed,
     });
   }
 
@@ -65,6 +66,16 @@ export abstract class QueryContainer<
    */
   public get isIdle() {
     return this.auxiliary.isIdle;
+  }
+
+  public get status() {
+    return {
+      isLoading: this.isLoading,
+      isError: this.isError,
+      error: this.error,
+      isSuccess: this.isSuccess,
+      isIdle: this.isIdle,
+    };
   }
 
   /**

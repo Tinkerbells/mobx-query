@@ -25,8 +25,15 @@ export class DataStorage<TData> {
   /**
    * Метод для установки данных
    */
-  public setData = (value: TData) => {
-    this.internalData = value;
+  public setData = (value: TData | ((data?: TData) => TData)) => {
+    this.internalData =
+      typeof value === 'function'
+        ? (value as (data?: TData) => TData)(this.internalData)
+        : value;
+  };
+
+  public cleanData = () => {
+    this.internalData = undefined;
   };
 
   /**

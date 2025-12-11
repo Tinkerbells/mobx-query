@@ -1,4 +1,5 @@
-import { Query, type QueryExecutor, type QueryParams } from '../Query';
+import { AdaptableMap } from '../AdaptableMap';
+import { DataStorageFactory } from '../DataStorage';
 import {
   type InfiniteExecutor,
   InfiniteQuery,
@@ -9,10 +10,22 @@ import {
   type MutationExecutor,
   type MutationParams,
 } from '../Mutation';
-import type { CacheKey, FetchPolicy } from '../types';
-import { type DataStorage, DataStorageFactory } from '../DataStorage';
+import { PollingService } from '../PollingService';
+import { Query, type QueryExecutor, type QueryParams } from '../Query';
+import {
+  InfiniteQuerySet,
+  type InfiniteQuerySetConfig,
+  type InfiniteQuerySetConfigurator,
+  MutationSet,
+  QuerySet,
+  type QuerySetConfig,
+  type QuerySetConfigurator,
+} from '../Sets';
 import { type StatusStorage, StatusStorageFactory } from '../StatusStorage';
-import { AdaptableMap } from '../AdaptableMap';
+import { SynchronizationService } from '../SynchronizationService';
+import type { CacheKey, FetchPolicy } from '../types';
+
+import type { CachedQuery, KeyHash, Keys, UnknownCachedQuery } from './types';
 
 /**
  * Стандартный обработчик ошибки запроса,
@@ -20,10 +33,20 @@ import { AdaptableMap } from '../AdaptableMap';
  */
 type OnError<TError = unknown> = (error: TError) => void;
 
-/**
- * Хэш ключа
- */
-type KeyHash = string;
+type WithSynchronization = {
+  /**
+   * Флаг, отвечающий за синхронизацию данных между инстансами одной и той же квери в разных вкладках браузера
+   * @default либо значение переданное при создании MobxQuery, либо false
+   */
+  enabledSynchronization?: boolean;
+};
+
+type WithPollingTime = {
+  /**
+   * Время в мс, раз в которое необходимо инвалидировать query
+   */
+  pollingTime?: number;
+};
 
 type MobxQueryParams = {
   /**
@@ -41,9 +64,18 @@ type MobxQueryParams = {
    * @default false
    */
   enabledAutoFetch?: boolean;
+  /**
+   * Флаг, отвечающий за синхронизацию данных между инстансами одной и той же квери в разных вкладках браузера
+   * @default false
+   */
+  enabledSynchronization?: boolean;
 };
 
-type CreateQueryParams<TResult, TError, TIsBackground extends boolean> = Omit<
+export type CreateQueryParams<
+  TResult,
+  TError,
+  TIsBackground extends boolean,
+> = Omit<
   QueryParams<TResult, TError, TIsBackground>,
   'dataStorage' | 'statusStorage' | 'backgroundStatusStorage' | 'submitValidity'
 > & {
@@ -52,9 +84,10 @@ type CreateQueryParams<TResult, TError, TIsBackground extends boolean> = Omit<
    * @default false
    */
   isBackground?: TIsBackground;
-};
+} & WithSynchronization &
+  WithPollingTime;
 
-type CreateInfiniteQueryParams<
+export type CreateInfiniteQueryParams<
   TResult,
   TError,
   TIsBackground extends boolean,
@@ -67,16 +100,22 @@ type CreateInfiniteQueryParams<
    * @default false
    */
   isBackground?: TIsBackground;
-};
+} & WithSynchronization &
+  WithPollingTime;
 
-type QueryType = typeof Query.name | typeof InfiniteQuery.name;
+export type CreateMutationParams<TResult, TError> = MutationParams<
+  TResult,
+  TError
+>;
 
 /**
- * Внутриний тип кешируемого стора
+ * Стратегия инвалидации кэша
+ * @property 'partial-match' - Проверяет наличие хотя бы одной части ключа в кэше
+ * @property 'chain-match' - Проверяет наличие полной связки ключей в кэше
  */
-type CachedQuery<TResult, TError, TIsBackground extends boolean> =
-  | Query<TResult, TError, TIsBackground>
-  | InfiniteQuery<TResult, TError, TIsBackground>;
+export type InvalidateStrategy = 'partial-match' | 'chain-match';
+
+type QueryType = typeof Query.name | typeof InfiniteQuery.name;
 
 /**
  * Параметры поддающиеся установке значению по умолчанию
@@ -84,11 +123,21 @@ type CachedQuery<TResult, TError, TIsBackground extends boolean> =
 type FallbackAbleCreateParams<TResult, TError, TIsBackground extends boolean> =
   | Pick<
       CreateQueryParams<TResult, TError, TIsBackground>,
-      'onError' | 'fetchPolicy' | 'enabledAutoFetch' | 'isBackground'
+      | 'onError'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
+      | 'isBackground'
+      | 'enabledSynchronization'
+      | 'pollingTime'
     >
   | Pick<
       CreateInfiniteQueryParams<TResult, TError, TIsBackground>,
-      'onError' | 'fetchPolicy' | 'enabledAutoFetch' | 'isBackground'
+      | 'onError'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
+      | 'isBackground'
+      | 'enabledSynchronization'
+      | 'pollingTime'
     >;
 
 /**
@@ -132,7 +181,7 @@ export class MobxQuery<TDefaultError = void> {
   /**
    * Map соответствия хешей ключей к запомненным сторам
    */
-  private queriesMap = new AdaptableMap<CachedQuery<unknown, unknown, false>>();
+  private queriesMap = new AdaptableMap<UnknownCachedQuery>();
 
   /**
    * Фабрика создания хранилищ данных для обычного Query
@@ -160,67 +209,171 @@ export class MobxQuery<TDefaultError = void> {
    */
   private readonly defaultEnabledAutoFetch: boolean;
 
+  private readonly defaultEnabledSynchronization: boolean;
+
+  private readonly synchronizationService: SynchronizationService;
+
+  private readonly pollingService: PollingService;
+
   private serialize = (data: CacheKey | CacheKey[]) => JSON.stringify(data);
 
-  constructor({
-    onError,
-    fetchPolicy = 'cache-first',
-    enabledAutoFetch = false,
-  }: MobxQueryParams = {}) {
+  constructor(
+    {
+      onError,
+      fetchPolicy = 'cache-first',
+      enabledAutoFetch = false,
+      enabledSynchronization = false,
+    }: MobxQueryParams = {},
+    _BroadcastChannel:
+      | typeof BroadcastChannel
+      | undefined = globalThis.BroadcastChannel,
+    _document: Document | undefined = globalThis.document,
+  ) {
     this.defaultErrorHandler = onError;
     this.defaultFetchPolicy = fetchPolicy;
     this.defaultEnabledAutoFetch = enabledAutoFetch;
+    this.defaultEnabledSynchronization = enabledSynchronization;
+
+    this.pollingService = new PollingService(
+      this.queriesMap,
+      this.invalidateByKeyHash,
+      _document,
+    );
+
+    this.synchronizationService = new SynchronizationService(
+      this.statusStorageFactory,
+      this.queryDataStorageFactory,
+      this.pollingService,
+      _BroadcastChannel,
+    );
   }
 
   /**
-   * Метод для инвалидации по списку ключей,
-   * предполагается использование из домена
+   * Проверяет пересечение ключей в зависимости от стратегии
+   * @param invalidatedKeys - Ключи для инвалидации
+   * @param queryKeys - Ключи запроса
+   * @param strategy - Стратегия проверки:
+   * - 'chain-match' - все ключи из invalidatedKeys должны присутствовать в queryKeys
+   * - 'partial-match' - хотя бы один ключ из invalidatedKeys должен быть в queryKeys
    */
-  public invalidate = (keysParts: CacheKey[]) => {
-    // Сет сериализованных ключей
-    const keysSet = new Set(keysParts.map(this.serialize));
+  private checkTouchedElement = (
+    invalidatedKeys: CacheKey[],
+    queryKeys: CacheKey[],
+    strategy: InvalidateStrategy,
+  ) => {
+    const serializedInvalidatedKeys = invalidatedKeys.map(this.serialize);
 
-    [...this.keys.keys()].forEach((keyHash) => {
-      const key = this.keys.get(keyHash);
+    if (strategy === 'chain-match') {
+      return serializedInvalidatedKeys.every((invalidatedKey) =>
+        queryKeys.some(
+          (queryKey) => invalidatedKey === this.serialize(queryKey),
+        ),
+      );
+    }
 
-      if (!key) {
-        return;
-      }
+    return queryKeys.some((queryKey) =>
+      serializedInvalidatedKeys.find(
+        (invalidatedKey) => invalidatedKey === this.serialize(queryKey),
+      ),
+    );
+  };
 
-      // Проверяем, есть ли пересечение между закешированными ключами и набором ключей для инвалидации
-      const hasTouchedElement = key.some((valuePart) =>
-        keysSet.has(this.serialize(valuePart)),
+  /**
+   * Метод для инвалидации по списку ключей, предполагается использование из домена
+   * @param invalidatedKeys - Массив ключей для инвалидации
+   * @param strategy - Стратегия инвалидации. 'chain-match' - инвалидировать при совпадении связки ключей в кэше, 'partial-match' - инвалидировать при частичном совпадении ключей. По умолчанию 'partial-match'
+   * @example
+   * // Инвалидация по частичному совпадению ключей
+   * mobxQuery.invalidate(['users', '1']); // Инвалидирует все query, содержащие ключ 'users' или '1'
+   *
+   * // Инвалидация по совпадению связки ключей
+   * mobxQuery.invalidate(['users', '1'], 'chain-match'); // Инвалидирует только query с точным набором ключей ['users', '1']
+   */
+  public invalidate = (
+    invalidatedKeys: CacheKey[],
+    strategy: InvalidateStrategy = 'partial-match',
+  ) => {
+    this.getExistsKeyHashes(invalidatedKeys, strategy).forEach(({ keyHash }) =>
+      this.invalidateByKeyHash(keyHash),
+    );
+  };
+
+  private invalidateByKeyHash = (keyHash: KeyHash) => {
+    this.queriesMap.get(keyHash)?.invalidate();
+    // Конвертируем инвалидированный квери в слабый,
+    // чтобы сборщик мусора мог удалить неиспользуемые квери
+    this.queriesMap.convertToWeak(keyHash);
+    this.pollingService.clean(keyHash);
+  };
+
+  /**
+   * Метод для получения массива хешей ключей на основании ключей и стратегии
+   */
+  private getExistsKeyHashes = (
+    keys: CacheKey[],
+    strategy: InvalidateStrategy = 'partial-match',
+  ) =>
+    [...this.keys.keys()]
+      .map((keyHash) => ({ keyHash, queryKeys: this.keys.get(keyHash) }))
+      .filter(
+        ({ queryKeys, keyHash }) =>
+          queryKeys &&
+          this.checkTouchedElement(keys, queryKeys, strategy) &&
+          this.queriesMap.has(keyHash),
       );
 
-      if (hasTouchedElement) {
+  /**
+   * метод для получения массива существующий квери на основании ключей и стратегии
+   */
+  public getExistsQueries = <TQuery = UnknownCachedQuery>(
+    keys: CacheKey[],
+    strategy: InvalidateStrategy = 'partial-match',
+  ) =>
+    this.getExistsKeyHashes(keys, strategy).reduce<Array<TQuery>>(
+      (acc, { keyHash }) => {
         const query = this.queriesMap.get(keyHash);
 
         if (query) {
-          query.invalidate();
-          // Конвертируем инвалидированный квери в слабый,
-          // чтобы сборщик мусора мог удалить неиспользуемые квери
-          this.queriesMap.convertToWeak(keyHash);
+          acc.push(query as TQuery);
         }
-      }
-    });
-  };
+
+        return acc;
+      },
+      [],
+    );
 
   // Метод для подтверждения того, что квери успешно получил валидные данные
-  private submitValidity = (keyHash: KeyHash) => {
+  private submitValidity = (
+    keys: Keys,
+    isCacheable: boolean,
+    enabledSynchronization: boolean,
+    pollingTime?: number,
+  ) => {
+    if (enabledSynchronization) {
+      this.synchronizationService.emit(keys);
+    }
+
+    if (pollingTime) {
+      this.pollingService.setupTimer(keys.queryKeyHash, pollingTime);
+    }
+
+    // 'network-only' квери не будут конвертироваться,
+    // следовательно, они всегда будут храниться как "слабые",
+    // что позволит сборщику мусора удалять их из памяти при отсутствии ссылок
+    if (!isCacheable) {
+      return;
+    }
+
     // конвертируем квери в сильный,
     // чтобы сборщик мусора не удалил наш кеш преждевременно
-    this.queriesMap.convertToStrong(keyHash);
+    this.queriesMap.convertToStrong(keys.queryKeyHash);
   };
 
   /**
    * Метод инвалидации всех query
    */
-  public invalidateQueries = () => {
-    [...this.keys.keys()].forEach((keyHash) => {
-      this.queriesMap.get(keyHash)?.invalidate();
-      this.queriesMap.convertToWeak(keyHash);
-    });
-  };
+  public invalidateQueries = () =>
+    [...this.keys.keys()].forEach(this.invalidateByKeyHash);
 
   /**
    * Метод, который занимается проверкой наличия квери по ключу,
@@ -235,6 +388,7 @@ export class MobxQuery<TDefaultError = void> {
     createParams?: FallbackAbleCreateParams<TResult, TError, TIsBackground>,
   ) => {
     const fetchPolicy = createParams?.fetchPolicy || this.defaultFetchPolicy;
+
     const keys = this.makeKeys(
       key,
       fetchPolicy,
@@ -250,10 +404,10 @@ export class MobxQuery<TDefaultError = void> {
 
     const query = createInstance({
       onError: (createParams?.onError ||
-        this.defaultErrorHandler) as OnError<TError>,
+        this.defaultErrorHandler) as OnError<TError> as OnError<TError>,
       enabledAutoFetch:
         createParams?.enabledAutoFetch ?? this.defaultEnabledAutoFetch,
-      fetchPolicy: fetchPolicy,
+      fetchPolicy,
       dataStorage: this.queryDataStorageFactory.getStorage<TResult>(
         keys.dataKeyHash,
       ),
@@ -267,13 +421,14 @@ export class MobxQuery<TDefaultError = void> {
         keys.backgroundStatusKeyHash,
         Boolean(createParams?.isBackground) as TIsBackground,
       ),
-      submitValidity:
-        // 'network-only' квери не будут подтверждать свою валидность,
-        // следовательно, они всегда будут храниться как "слабые",
-        // что позволит сборщику мусора удалять их из памяти при отсутствии ссылок
-        fetchPolicy !== 'network-only'
-          ? () => this.submitValidity(keys.queryKeyHash)
-          : undefined,
+      submitValidity: () =>
+        this.submitValidity(
+          keys,
+          fetchPolicy !== 'network-only',
+          createParams?.enabledSynchronization ??
+            this.defaultEnabledSynchronization,
+          createParams?.pollingTime,
+        ),
     });
 
     this.queriesMap.set(
@@ -294,7 +449,7 @@ export class MobxQuery<TDefaultError = void> {
     fetchPolicy: FetchPolicy,
     isBackground: boolean,
     type: QueryType,
-  ) => {
+  ): Keys => {
     // C введением StrictMode в реакт 18, проявилась проблема,
     // что network-only квери, созданные в одном реакт компоненте,
     // создаются дважды (т.к. все хуки вызываются дважды)
@@ -312,10 +467,10 @@ export class MobxQuery<TDefaultError = void> {
     const queryKey = [...rootKey, { fetchPolicy, date, isBackground, type }];
     const queryKeyHash = this.serialize(queryKey);
     const dataKeyHash = this.serialize([...rootKey, { type }]);
-    const statusKeyHash = this.serialize([...rootKey, { type }]);
+    const statusKeyHash = this.serialize([...rootKey, { type, date }]);
     const backgroundStatusKeyHash = this.serialize([
       ...rootKey,
-      { type, isBackground },
+      { type, isBackground, date },
     ]);
 
     return {
@@ -332,7 +487,7 @@ export class MobxQuery<TDefaultError = void> {
     hasBackground: TIsBackground,
   ) =>
     (hasBackground
-      ? this.statusStorageFactory.getStorage(keyHash)
+      ? this.statusStorageFactory.getStorage<TError>(keyHash)
       : null) as TIsBackground extends true ? StatusStorage<TError> : null;
 
   /**
@@ -353,7 +508,7 @@ export class MobxQuery<TDefaultError = void> {
         new Query(executor, {
           ...params,
           ...internalParams,
-          dataStorage: internalParams.dataStorage as DataStorage<TResult>,
+          dataStorage: internalParams.dataStorage,
         }),
       Query.name,
       params,
@@ -377,7 +532,7 @@ export class MobxQuery<TDefaultError = void> {
         new InfiniteQuery(executor, {
           ...params,
           ...internalParams,
-          dataStorage: internalParams.dataStorage as DataStorage<TResult[]>,
+          dataStorage: internalParams.dataStorage,
         }),
       InfiniteQuery.name,
       params,
@@ -392,10 +547,73 @@ export class MobxQuery<TDefaultError = void> {
     TExecutorParams = void,
   >(
     executor: MutationExecutor<TResult, TExecutorParams>,
-    params?: MutationParams<TResult, TError>,
+    params?: CreateMutationParams<TResult, TError>,
   ) =>
     new Mutation<TResult, TError, TExecutorParams>(executor, {
       ...params,
       onError: params?.onError || this.defaultErrorHandler,
     });
+
+  /**
+   * Создает набор queries под одним ключем
+   * @param configurator - Функция конфигурации набора запросов. Она должна возвращать объект с полями:
+   *   - keys (необязательно): массив ключей для кеширования;
+   *   - execute: функция, которая возвращает промис с результатом выполнения запроса.
+   * @example
+   * const docQuerySet = mobxQuery.createQuerySet((id: string, count?: number) => ({
+   *   execute: () => docEndpoint.getDoc(id),
+   * }));
+   *
+   * const docQuery = docQuerySet.create();
+   *
+   * docQuery.data // { data: [id, count] }
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: any нужен для вывода типов
+  public createQuerySet = <TParams extends any[], TResponse>(
+    configurator: QuerySetConfigurator<TParams, TResponse>,
+    config?: QuerySetConfig,
+  ) =>
+    new QuerySet<TParams, TResponse, TDefaultError>(this, configurator, config);
+
+  /**
+   * Создает набор infinite queries под одним ключем
+   * @param configurator - Функция конфигурации набора запросов. Она должна возвращать объект с полями:
+   *   - keys (необязательно): массив ключей для кеширования;
+   *   - execute: функция, которая возвращает промис с результатом выполнения запроса.
+   * @example
+   * const docListInfiniteQuerySet = mobxQuery.createInfiniteQuerySet((id: string, count?: number) => ({
+   *   execute: ({ offset, count }) => docEndpoint.getDocList(id, offset, count),
+   * }));
+   *
+   * const docListInfiniteQuery = docListInfiniteQuerySet.create();
+   *
+   * docListInfiniteQuery.data
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: any нужен для вывода типов
+  public createInfiniteQuerySet = <TParams extends any[], TResponse>(
+    configurator: InfiniteQuerySetConfigurator<TParams, TResponse>,
+    config?: InfiniteQuerySetConfig,
+  ) =>
+    new InfiniteQuerySet<TParams, TResponse, TDefaultError>(
+      this,
+      configurator,
+      config,
+    );
+
+  /**
+   * Создает набор мутаций для единого интерфейса с query sets
+   * @param executor - Функция-исполнитель мутации. Она должна возвращать промис с результатом выполнения мутации.
+   * @example
+   * const editDocMutationSet = mobxQuery.createMutationSet((params: DocsDTO.EditDocInput) => {
+   *   return docsEndpoints.editDoc(params);
+   * });
+   *
+   * const editDocMutation = editDocMutationSet.create();
+   *
+   * editDocMutation.sync({ params: { id: 'docId', content: 'Новое содержимое' } });
+   */
+  public createMutationSet = <TResponse, TExecutorParams = void>(
+    executor: MutationExecutor<TResponse, TExecutorParams>,
+  ) =>
+    new MutationSet<TResponse, TExecutorParams, TDefaultError>(this, executor);
 }

@@ -143,6 +143,12 @@ export class Query<
 
     if (this.isNetworkOnly || this.auxiliary.isInvalid || isInstanceAllow) {
       this.proceedSync(params);
+
+      return;
+    }
+
+    if (this.isSuccess) {
+      params?.onSuccess?.(this.storage.data as TResult);
     }
   };
 
@@ -159,9 +165,16 @@ export class Query<
   /**
    * Форс метод для установки данных
    */
-  public forceUpdate = (data: TResult) => {
+  public forceUpdate = (param: TResult | ((data?: TResult) => TResult)) => {
     this.auxiliary.submitSuccess();
-    this.submitSuccess(data);
+
+    if (typeof param === 'function') {
+      this.submitSuccess(
+        (param as (data?: TResult) => TResult)(this.storage.data),
+      );
+    } else {
+      this.submitSuccess(param);
+    }
   };
 
   /**
@@ -176,6 +189,10 @@ export class Query<
         onSuccess?.(res);
       })
       .catch((e: TError) => {
+        if (!this.background) {
+          this.storage.cleanData();
+        }
+
         if (onError) {
           onError(e);
         } else {

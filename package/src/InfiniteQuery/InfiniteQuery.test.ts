@@ -7,7 +7,12 @@ import { StatusStorage } from '../StatusStorage';
 import { InfiniteQuery } from './InfiniteQuery';
 
 describe('InfiniteQuery', () => {
-  const getDataStorage = <T = unknown[]>() => new DataStorage<T>();
+  const getDataStorage = <T = unknown>() =>
+    new DataStorage<{
+      data: T[];
+      offset: number;
+      isEndReached: boolean;
+    }>();
   const getStatusStorage = () => new StatusStorage();
 
   describe('При начальном состоянии', () => {
@@ -747,6 +752,14 @@ describe('InfiniteQuery', () => {
       query.forceUpdate(['foo']);
       expect(query.isSuccess).toBeTruthy();
       expect(query.isError).toBeFalsy();
+    });
+
+    it('Данные можно обновлять функцией', () => {
+      const { query } = createQuery();
+
+      query.forceUpdate(['foo']);
+      query.forceUpdate((current) => [...(current ?? []), 'bar']);
+      expect(query.data).toStrictEqual(['foo', 'bar']);
     });
   });
 });
