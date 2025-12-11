@@ -17,7 +17,7 @@ export class SynchronizationService {
       | undefined = globalThis.BroadcastChannel,
   ) {
     if (_BroadcastChannel) {
-      this.broadcastChannel = new _BroadcastChannel('@astral/mobx-query');
+      this.broadcastChannel = new _BroadcastChannel('@tinkerbells/mobx-query');
     }
 
     this.init();

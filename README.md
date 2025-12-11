@@ -74,7 +74,7 @@ yarn add @tinkerbells/mobx-query@alpha
 Инициализация MobxQuery:
 ```api/services/CacheService/CacheService.ts```
 ```ts
-import { MobxQuery } from '@astral/mobx-query';
+import { MobxQuery } from '@tinkerbells/mobx-query';
 
 // рекомендуется явно задавать параметры для MobXQuery
 export const createCacheService = () =>
@@ -524,7 +524,7 @@ await docQueryWithCache.async(); // запрос не будет выполне�
 
 ### Как работает кэш
 
-Все данные, возвращаемые `QuerySet` и `InfiniteQuerySet`, кэшируются в едином хранилище @astral/mobx-query.
+Все данные, возвращаемые `QuerySet` и `InfiniteQuerySet`, кэшируются в едином хранилище @tinkerbells/mobx-query.
 
 При первом вызове `create` в хранилище создается запись с ключем, состоящим из:
 - Хэш от функции конфигурации
@@ -785,7 +785,7 @@ class BooksListStore {
 
 ```ts
 import { when } from 'mobx';
-import { mockCacheGroups } from '@astral/mobx-query-vitest-mock';
+import { mockCacheGroups } from '@tinkerbells/mobx-query-vitest-mock';
 
 describe('BooksListStore', () => {
   it('Список книг форматируется для отображения', async () => {
