@@ -4,7 +4,10 @@
   "browser": "./src/index.ts",
   "main": "./src/index.ts",
   "scripts": {
-    "build": "node pack",
+    "build": "npm run clean && npm run bundle && npm run build:package",
+    "bundle": "tsdown --config tsdown.config.mts",
+    "clean": "rm -rf lib",
+    "build:package": "node ./scripts/prepare-package.js",
     "publish": "npm publish ./lib",
     "tests": "vitest run --passWithNoTests",
     "tests:ci": "vitest run --passWithNoTests --reporter=junit --outputFile.junit=junit.xml",
@@ -14,5 +17,8 @@
   },
   "dependencies": {
     "mobx": "^6.9.0"
+  },
+  "devDependencies": {
+    "tsdown": "^0.17.2"
   }
 }
