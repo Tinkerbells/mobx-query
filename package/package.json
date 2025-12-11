@@ -1,5 +1,5 @@
 {
-  "name": "@astral/mobx-query",
+  "name": "@tinkerbells/mobx-query",
   "version": "0.0.1",
   "browser": "./src/index.ts",
   "main": "./src/index.ts",

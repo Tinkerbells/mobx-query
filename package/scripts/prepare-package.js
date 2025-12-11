@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const INTERNAL_PACKAGES = ['@astral/mobx-query'];
+const INTERNAL_PACKAGES = ['@tinkerbells/mobx-query'];
 const OUT_DIR = path.resolve(__dirname, '..', 'lib');
 const PACKAGE_DIR = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(PACKAGE_DIR, '..');
