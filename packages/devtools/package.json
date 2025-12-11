@@ -1,15 +1,27 @@
 {
-  "name": "mobx-query-devtools",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@tinkerbells/mobx-query-devtools",
+  "version": "0.1.0",
   "type": "module",
+  "main": "./dist/mobx-query-devtools.cjs.js",
+  "module": "./dist/mobx-query-devtools.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/mobx-query-devtools.es.js",
+      "require": "./dist/mobx-query-devtools.cjs.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tinkerbells/mobx-query": "0.1.0",
+    "@tinkerbells/mobx-query": "workspace:*",
     "mobx": "^6.13.6",
     "mobx-vue-lite": "^0.4.3",
     "vue": "^3.5.24"
