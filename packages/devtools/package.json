@@ -7,6 +7,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "import": "./dist/mobx-query-devtools.es.js",
       "require": "./dist/mobx-query-devtools.cjs.js",
       "types": "./dist/index.d.ts"
