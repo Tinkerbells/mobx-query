@@ -5,11 +5,16 @@ import { QueryModel } from './models/QueryModel';
 
 const SYNC_INTERVAL = 1000;
 
+export type SortOption = 'status' | 'queryKey' | 'lastUpdated';
+export type SortOrder = 'asc' | 'desc';
+
 export class DevToolsStore {
   public isOpen: boolean;
   public searchTerm: string;
   public selectedQueryHash: string | null;
   public queryModels: QueryModel[];
+  public sortBy: SortOption;
+  public sortOrder: SortOrder;
 
   private syncTimer?: number;
   private readonly adapter: DevToolsAdapter;
@@ -20,6 +25,8 @@ export class DevToolsStore {
     this.searchTerm = '';
     this.selectedQueryHash = null;
     this.queryModels = [];
+    this.sortBy = 'status';
+    this.sortOrder = 'asc';
 
     makeAutoObservable(this, {}, { autoBind: true });
     this.sync();
@@ -49,6 +56,18 @@ export class DevToolsStore {
     this.selectedQueryHash = hash;
   }
 
+  public setSortBy(sortBy: SortOption) {
+    this.sortBy = sortBy;
+  }
+
+  public setSortOrder(sortOrder: SortOrder) {
+    this.sortOrder = sortOrder;
+  }
+
+  public toggleSortOrder() {
+    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+  }
+
   public get activeQuery() {
     return (
       this.queryModels.find((model) => model.hash === this.selectedQueryHash) ??
@@ -56,16 +75,54 @@ export class DevToolsStore {
     );
   }
 
+  public get queries() {
+    return this.queryModels;
+  }
+
   public get filteredQueries() {
-    if (!this.searchTerm) {
-      return this.queryModels;
+    let filtered = this.queryModels;
+
+    // Apply search filter
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter((model) =>
+        JSON.stringify(model.key).toLowerCase().includes(term),
+      );
     }
 
-    const term = this.searchTerm.toLowerCase();
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
 
-    return this.queryModels.filter((model) =>
-      JSON.stringify(model.key).toLowerCase().includes(term),
-    );
+      switch (this.sortBy) {
+        case 'status':
+          comparison = this.compareByStatus(a, b);
+          break;
+        case 'queryKey':
+          comparison = JSON.stringify(a.key).localeCompare(JSON.stringify(b.key));
+          break;
+        case 'lastUpdated':
+          // mobx-query не хранит время обновления, используем хеш для стабильной сортировки
+          comparison = a.hash.localeCompare(b.hash);
+          break;
+      }
+
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }
+
+  private compareByStatus(a: QueryModel, b: QueryModel): number {
+    const getStatusPriority = (model: QueryModel) => {
+      if (model.isLoading) return 0;
+      if (model.isError) return 1;
+      if (model.isStale) return 2;
+      if (model.isSuccess) return 3;
+      return 4;
+    };
+
+    return getStatusPriority(a) - getStatusPriority(b);
   }
 
   public sync() {

@@ -69,6 +69,25 @@ export class QueryModel {
     return this.instance?.isEndReached;
   }
 
+  get background() {
+    return this.instance?.background ?? null;
+  }
+
+  get isStale() {
+    // mobx-query не имеет концепции stale
+    // Считаем query stale, если есть данные но нет loading и success
+    return this.hasData && !this.isLoading && !this.isSuccess;
+  }
+
+  get hasData() {
+    return this.instance?.data !== undefined;
+  }
+
+  get updatedAt() {
+    // mobx-query не хранит время обновления
+    return null;
+  }
+
   get type(): 'query' | 'infinite' | 'mutation' {
     if (this.instance && 'fetchMore' in this.instance) {
       return 'infinite';
@@ -117,6 +136,34 @@ export class QueryModel {
     if (typeof this.instance?.forceUpdate === 'function') {
       this.instance.forceUpdate(newData);
     }
+  }
+
+  public setIsSuccess(success: boolean) {
+    const status = (this.instance as { statusStorage?: QueryInstance['statusStorage'] })?.statusStorage;
+
+    if (!status) return;
+
+    runInAction(() => {
+      status.isSuccess = success;
+      if (success) {
+        status.isError = false;
+        status.isLoading = false;
+      }
+    });
+  }
+
+  public setIsError(isError: boolean) {
+    const status = (this.instance as { statusStorage?: QueryInstance['statusStorage'] })?.statusStorage;
+
+    if (!status) return;
+
+    runInAction(() => {
+      status.isError = isError;
+      if (isError) {
+        status.isSuccess = false;
+        status.isLoading = false;
+      }
+    });
   }
 
   public setError(error: unknown) {
