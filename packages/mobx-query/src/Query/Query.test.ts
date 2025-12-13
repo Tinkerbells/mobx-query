@@ -600,6 +600,28 @@ describe('Query', () => {
       expect(query.isError).toBeFalsy();
     });
 
+    it('Сбрасывает загрузку/idle и очищает ошибку', async () => {
+      const failingQuery = new Query(
+        () => Promise.reject('boom'),
+        {
+          dataStorage: getDataStorage(),
+          statusStorage: getStatusStorage(),
+        },
+      );
+
+      await failingQuery.async().catch(() => { });
+      await when(() => !failingQuery.isLoading);
+      expect(failingQuery.isError).toBeTruthy();
+      expect(failingQuery.error).toBe('boom');
+
+      failingQuery.forceUpdate('ok');
+
+      expect(failingQuery.isIdle).toBeFalsy();
+      expect(failingQuery.isLoading).toBeFalsy();
+      expect(failingQuery.isError).toBeFalsy();
+      expect(failingQuery.error).toBeUndefined();
+    });
+
     it('Данные можно обновлять функцией', () => {
       const { query } = createQuery();
 

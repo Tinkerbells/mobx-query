@@ -754,6 +754,28 @@ describe('InfiniteQuery', () => {
       expect(query.isError).toBeFalsy();
     });
 
+    it('Сбрасывает загрузку/idle и очищает ошибку', async () => {
+      const errorQuery = new InfiniteQuery(
+        () => Promise.reject('boom'),
+        {
+          dataStorage: getDataStorage(),
+          statusStorage: getStatusStorage(),
+        },
+      );
+
+      await errorQuery.async().catch(() => { });
+      await when(() => !errorQuery.isLoading);
+      expect(errorQuery.isError).toBeTruthy();
+      expect(errorQuery.error).toBe('boom');
+
+      errorQuery.forceUpdate(['ok']);
+
+      expect(errorQuery.isIdle).toBeFalsy();
+      expect(errorQuery.isLoading).toBeFalsy();
+      expect(errorQuery.isError).toBeFalsy();
+      expect(errorQuery.error).toBeUndefined();
+    });
+
     it('Данные можно обновлять функцией', () => {
       const { query } = createQuery();
 

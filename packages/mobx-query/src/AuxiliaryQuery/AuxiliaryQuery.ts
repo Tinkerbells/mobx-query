@@ -81,6 +81,8 @@ export class AuxiliaryQuery<TResult, TError = void> {
 
           runInAction(() => {
             this.statusStorage.isLoading = false;
+            this.backgroundStatusStorage &&
+              (this.backgroundStatusStorage.isLoading = false);
           });
         });
     }
@@ -89,7 +91,9 @@ export class AuxiliaryQuery<TResult, TError = void> {
   };
 
   private setSuccess: SetStorage<TError> = (storage) => {
+    storage.isLoading = false;
     storage.isError = false;
+    storage.error = undefined;
     storage.isSuccess = true;
   };
 
@@ -105,11 +109,13 @@ export class AuxiliaryQuery<TResult, TError = void> {
    * Обработчик успешного ответа
    */
   public submitSuccess = () => {
+    this.isIdle = false;
     this.checkBackgroundAndSet(this.setSuccess);
     this.isInvalid = false;
   };
 
   private setError = (storage: StatusStorage<TError>, error: TError) => {
+    storage.isLoading = false;
     storage.isSuccess = false;
     storage.isError = true;
     storage.error = error;
@@ -119,6 +125,7 @@ export class AuxiliaryQuery<TResult, TError = void> {
    * Обработчик ошибки
    */
   public submitError = (error: TError) => {
+    this.isIdle = false;
     this.checkBackgroundAndSet((storage) => this.setError(storage, error));
     this.isInvalid = false;
   };
