@@ -6,7 +6,12 @@ dist
 dist-ssr
 *.local
 .env
+.env.local
+.env.*.local
 .cache
+
+# NPM config with tokens
+**/.npmrc
 server/dist
 public/dist
 
