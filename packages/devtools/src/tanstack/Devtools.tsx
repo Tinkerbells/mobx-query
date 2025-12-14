@@ -106,7 +106,6 @@ const [selectedMutationId, setSelectedMutationId] = createSignal<number | null>(
   null,
 )
 const [panelWidth, setPanelWidth] = createSignal(0)
-const [offline, setOffline] = createSignal(false)
 
 export type DevtoolsComponentType = Component<QueryDevtoolsProps> & {
   shadowDOMTarget?: ShadowRoot
@@ -119,18 +118,6 @@ export const Devtools: Component<DevtoolsPanelProps> = (props) => {
     : goober.css
   const styles = createMemo(() => {
     return theme() === 'dark' ? darkStyles(css) : lightStyles(css)
-  })
-  const onlineManager = createMemo(
-    () => useQueryDevtoolsContext().onlineManager,
-  )
-  onMount(() => {
-    const unsubscribe = onlineManager().subscribe((online) => {
-      setOffline(!online)
-    })
-
-    onCleanup(() => {
-      unsubscribe()
-    })
   })
 
   const pip = usePiPWindow()
@@ -946,10 +933,12 @@ export const ContentView: Component<ContentViewProps> = (props) => {
               onClick={() => {
                 if (selectedView() === 'queries') {
                   sendDevToolsEvent({ type: 'CLEAR_QUERY_CACHE' })
-                  query_cache().clear()
+                  // TODO: посмотреть что с этим можно сделать
+                  // query_cache().clear()
                 } else {
+                  // TODO: посмотреть что с этим можно сделать
                   sendDevToolsEvent({ type: 'CLEAR_MUTATION_CACHE' })
-                  mutation_cache().clear()
+                  // mutation_cache().clear()
                 }
               }}
               class={cx(
@@ -961,28 +950,6 @@ export const ContentView: Component<ContentViewProps> = (props) => {
               title={`Clear ${selectedView()} cache`}
             >
               <Trash />
-            </button>
-            <button
-              onClick={() => {
-                onlineManager().setOnline(!onlineManager().isOnline())
-              }}
-              class={cx(
-                styles().actionsBtn,
-                offline() && styles().actionsBtnOffline,
-                'tsqd-actions-btn',
-                'tsqd-action-mock-offline-behavior',
-              )}
-              aria-label={`${offline()
-                ? 'Unset offline mocking behavior'
-                : 'Mock offline behavior'
-                }`}
-              aria-pressed={offline()}
-              title={`${offline()
-                ? 'Unset offline mocking behavior'
-                : 'Mock offline behavior'
-                }`}
-            >
-              {offline() ? <Offline /> : <Wifi />}
             </button>
             <Show when={!pip().pipWindow && !pip().disabled}>
               <button
@@ -1320,6 +1287,7 @@ const QueryRow: Component<{ query: Query }> = (props) => {
         queryKey: props.query.queryKey,
       })?.state,
     true,
+    // FIX: поправить
     (e) => e.query.queryHash === props.query.queryHash,
   )
 
@@ -1638,20 +1606,6 @@ const MutationStatusCount: Component = () => {
             }) === 'yellow',
         ).length,
   )
-
-  const paused = createSubscribeToMutationCacheBatcher(
-    (mutationCache) =>
-      mutationCache()
-        .getAll()
-        .filter(
-          (m) =>
-            getMutationStatusColor({
-              isPaused: m.state.isPaused,
-              status: m.state.status,
-            }) === 'purple',
-        ).length,
-  )
-
   const error = createSubscribeToMutationCacheBatcher(
     (mutationCache) =>
       mutationCache()
@@ -1915,15 +1869,6 @@ const QueryDetails = () => {
     const currentStatus = currentState.status
     const currentFetchMeta = currentState.fetchMeta
 
-    console.log('[DEBUG] Trigger Error: start', {
-      queryHash: activeQueryVal.queryHash,
-      currentData,
-      currentStatus,
-      currentDataType: typeof currentData,
-      currentDataIsUndefined: currentData === undefined,
-      currentDataIsNull: currentData === null,
-      fullCurrentState: currentState,
-    })
 
     sendDevToolsEvent({
       type: 'TRIGGER_ERROR',
@@ -1938,13 +1883,6 @@ const QueryDetails = () => {
     // mobx-query: сохраняем предыдущие данные для восстановления
     const __previousData = currentData  // ← Используем захваченное значение
     const __previousStatus = currentStatus  // ← Используем захваченное значение
-
-    console.log('[DEBUG] Trigger Error: saving', {
-      __previousQueryOptions,
-      __previousData,
-      __previousStatus,
-      __previousDataType: typeof __previousData,
-    })
 
     const newState = {
       status: 'error' as const,
@@ -2441,175 +2379,6 @@ const QueryDetails = () => {
             label="Query"
             defaultExpanded={['Query', 'queryKey']}
             value={activeQueryFresh()}
-          />
-        </div>
-      </div>
-    </Show>
-  )
-}
-
-const MutationDetails = () => {
-  const theme = useTheme()
-  const css = useQueryDevtoolsContext().shadowDOMTarget
-    ? goober.css.bind({ target: useQueryDevtoolsContext().shadowDOMTarget })
-    : goober.css
-  const styles = createMemo(() => {
-    return theme() === 'dark' ? darkStyles(css) : lightStyles(css)
-  })
-
-  const { colors } = tokens
-  const t = (light: string, dark: string) => (theme() === 'dark' ? dark : light)
-
-  const isPaused = createSubscribeToMutationCacheBatcher((mutationCache) => {
-    const mutations = mutationCache().getAll()
-    const mutation = mutations.find(
-      (m) => m.mutationId === selectedMutationId(),
-    )
-    if (!mutation) return false
-    return mutation.state.isPaused
-  })
-
-  const status = createSubscribeToMutationCacheBatcher((mutationCache) => {
-    const mutations = mutationCache().getAll()
-    const mutation = mutations.find(
-      (m) => m.mutationId === selectedMutationId(),
-    )
-    if (!mutation) return 'idle'
-    return mutation.state.status
-  })
-
-  const color = createMemo(() =>
-    getMutationStatusColor({
-      isPaused: isPaused(),
-      status: status(),
-    }),
-  )
-
-  const activeMutation = createSubscribeToMutationCacheBatcher(
-    (mutationCache) =>
-      mutationCache()
-        .getAll()
-        .find((mutation) => mutation.mutationId === selectedMutationId()),
-    false,
-  )
-
-  const getQueryStatusColors = () => {
-    if (color() === 'gray') {
-      return css`
-        background-color: ${t(colors[color()][200], colors[color()][700])};
-        color: ${t(colors[color()][700], colors[color()][300])};
-        border-color: ${t(colors[color()][400], colors[color()][600])};
-      `
-    }
-    return css`
-      background-color: ${t(colors[color()][100], colors[color()][900])};
-      color: ${t(colors[color()][700], colors[color()][300])};
-      border-color: ${t(colors[color()][400], colors[color()][600])};
-    `
-  }
-
-  return (
-    <Show when={activeMutation()}>
-      <div
-        class={cx(styles().detailsContainer, 'tsqd-query-details-container')}
-      >
-        <div class={cx(styles().detailsHeader, 'tsqd-query-details-header')}>
-          Mutation Details
-        </div>
-        <div
-          class={cx(
-            styles().detailsBody,
-            'tsqd-query-details-summary-container',
-          )}
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <div class="tsqd-query-details-summary">
-            <pre>
-              <code>
-                <Show
-                  when={activeMutation()!.options.mutationKey}
-                  fallback={'No mutationKey found'}
-                >
-                  {displayValue(activeMutation()!.options.mutationKey, true)}
-                </Show>
-              </code>
-            </pre>
-            <span
-              class={cx(styles().queryDetailsStatus, getQueryStatusColors())}
-            >
-              <Show when={color() === 'purple'}>pending</Show>
-              <Show when={color() !== 'purple'}>{status()}</Show>
-            </span>
-          </div>
-          <div class="tsqd-query-details-last-updated">
-            <span>Submitted At:</span>
-            <span>
-              {new Date(
-                activeMutation()!.state.submittedAt,
-              ).toLocaleTimeString()}
-            </span>
-          </div>
-        </div>
-        <div class={cx(styles().detailsHeader, 'tsqd-query-details-header')}>
-          Variables Details
-        </div>
-        <div
-          style={{
-            padding: tokens.size[2],
-          }}
-          class="tsqd-query-details-explorer-container tsqd-query-details-query-explorer"
-        >
-          <Explorer
-            label="Variables"
-            defaultExpanded={['Variables']}
-            value={activeMutation()!.state.variables}
-          />
-        </div>
-        <div class={cx(styles().detailsHeader, 'tsqd-query-details-header')}>
-          Context Details
-        </div>
-        <div
-          style={{
-            padding: tokens.size[2],
-          }}
-          class="tsqd-query-details-explorer-container tsqd-query-details-query-explorer"
-        >
-          <Explorer
-            label="Context"
-            defaultExpanded={['Context']}
-            value={activeMutation()!.state.context}
-          />
-        </div>
-        <div class={cx(styles().detailsHeader, 'tsqd-query-details-header')}>
-          Data Explorer
-        </div>
-        <div
-          style={{
-            padding: tokens.size[2],
-          }}
-          class="tsqd-query-details-explorer-container tsqd-query-details-query-explorer"
-        >
-          <Explorer
-            label="Data"
-            defaultExpanded={['Data']}
-            value={activeMutation()!.state.data}
-          />
-        </div>
-        <div class={cx(styles().detailsHeader, 'tsqd-query-details-header')}>
-          Mutations Explorer
-        </div>
-        <div
-          style={{
-            padding: tokens.size[2],
-          }}
-          class="tsqd-query-details-explorer-container tsqd-query-details-query-explorer"
-        >
-          <Explorer
-            label="Mutation"
-            defaultExpanded={['Mutation']}
-            value={activeMutation()}
           />
         </div>
       </div>
