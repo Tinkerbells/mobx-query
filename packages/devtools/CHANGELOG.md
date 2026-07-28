@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.0.0...devtools-v1.1.0) (2026-07-28)
+
+
+### Features
+
+* **devtools:** publish initial npm package ([bafc666](https://github.com/Tinkerbells/mobx-query/commit/bafc66604f61dea798042b5dfa4a84af04f1b4dc))
+
 # 1.0.0 (2026-07-28)
 
 
