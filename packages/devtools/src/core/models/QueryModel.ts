@@ -1,18 +1,15 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable } from 'mobx'
 import type {
   MobxQueryDevtoolsEntry,
   MobxQueryDevtoolsQuery,
-} from '@tinkerbells88/mobx-query';
+} from '@tinkerbells88/mobx-query'
 
-/**
- * ViewModel для конкретного Query/InfiniteQuery.
- * Дает UI доступ к состоянию и "хакерским" методам для отладки.
- */
+/** View model used by the TanStack-compatible presentation layer. */
 export class QueryModel {
-  public readonly hash: string;
-  public readonly key: unknown[];
-  private typeValue: MobxQueryDevtoolsEntry['type'];
-  private query: MobxQueryDevtoolsQuery;
+  public readonly hash: string
+  public readonly key: unknown[]
+  private typeValue: MobxQueryDevtoolsEntry['type']
+  private query: MobxQueryDevtoolsQuery
 
   constructor(
     hash: string,
@@ -20,81 +17,96 @@ export class QueryModel {
     type: MobxQueryDevtoolsEntry['type'],
     query: MobxQueryDevtoolsQuery,
   ) {
-    this.hash = hash;
-    this.key = key;
-    this.typeValue = type;
-    this.query = query;
-
-    makeAutoObservable(this, {}, { autoBind: true });
+    this.hash = hash
+    this.key = key
+    this.typeValue = type
+    this.query = query
+    makeAutoObservable(this, {}, { autoBind: true })
   }
 
   public updateQuery(
     query: MobxQueryDevtoolsQuery,
     type: MobxQueryDevtoolsEntry['type'],
   ) {
-    this.query = query;
-    this.typeValue = type;
+    this.query = query
+    this.typeValue = type
   }
 
   private get state() {
-    return this.query.getDevtoolsState();
+    return this.query.getDevtoolsState()
   }
 
   get data() {
-    return this.state.data;
+    return this.state.data
   }
 
   get error() {
-    return this.state.error;
+    return this.state.error
   }
 
   get isLoading() {
-    return this.state.isLoading;
+    return this.state.isLoading
   }
 
   get isSuccess() {
-    return this.state.isSuccess;
+    return this.state.isSuccess
   }
 
   get isError() {
-    return this.state.isError;
-  }
-
-  get isEndReached() {
-    return this.state.isEndReached;
+    return this.state.isError
   }
 
   get isIdle() {
-    return this.state.isIdle;
+    return this.state.isIdle
+  }
+
+  get isEndReached() {
+    return this.state.isEndReached
+  }
+
+  get background() {
+    return this.state.background
+  }
+
+  get hasData() {
+    return this.data !== undefined
+  }
+
+  get isStale() {
+    return false
+  }
+
+  get updatedAt() {
+    return null
   }
 
   get type() {
-    return this.typeValue;
+    return this.typeValue
   }
 
   public refetch() {
-    if (this.type !== 'mutation') {
-      this.query.sync?.();
-    }
+    if (this.type !== 'mutation') this.query.sync?.()
   }
 
   public fetchMore() {
-    if (this.type === 'infinite') {
-      this.query.fetchMore?.();
-    }
+    if (this.type === 'infinite') this.query.fetchMore?.()
   }
 
   public invalidate() {
-    if (this.type !== 'mutation') {
-      this.query.invalidate?.();
-    }
+    if (this.type !== 'mutation') this.query.invalidate?.()
   }
 
-  public setData(newData: unknown) {
-    if (this.type === 'infinite' && !Array.isArray(newData)) {
-      throw new TypeError('Infinite query data must be a JSON array');
+  public setData(data: unknown) {
+    if (this.type === 'infinite' && !Array.isArray(data)) {
+      throw new TypeError('Infinite query data must be an array')
     }
-
-    this.query.forceUpdate?.(newData);
+    this.query.forceUpdate?.(data)
   }
+
+  // The TanStack-compatible UI exposes these controls. Mobx Query has no safe
+  // public equivalent, so they intentionally remain read-only.
+  public setIsLoading(_value: boolean) {}
+  public setIsSuccess(_value: boolean) {}
+  public setIsError(_value: boolean) {}
+  public setError(_value: unknown) {}
 }

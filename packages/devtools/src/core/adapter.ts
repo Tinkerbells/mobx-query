@@ -5,8 +5,6 @@ import type {
 
 /**
  * Адаптер поверх публичного devtools API MobxQuery.
- * Он не обращается к `query.data`, потому что этот getter может инициировать
- * auto-fetch в прикладном коде.
  */
 export class DevToolsAdapter {
   private readonly client: MobxQuery;
