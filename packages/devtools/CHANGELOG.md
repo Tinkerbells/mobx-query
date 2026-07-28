@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.2.0...devtools-v1.2.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **devtools:** restore interactive query states ([0e4b8ac](https://github.com/Tinkerbells/mobx-query/commit/0e4b8ac254a91bd3e535d974ab0bd006d64aea6f))
+
 # [1.2.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.1.0...devtools-v1.2.0) (2026-07-28)
 
 
