@@ -2,6 +2,8 @@
 
 Developer tools для визуализации и отладки MobX Query кеша.
 
+Пакет публикуется в публичный npm registry как `@tinkerbells88/mobx-query-devtools`.
+
 ## Установка
 
 ```bash
