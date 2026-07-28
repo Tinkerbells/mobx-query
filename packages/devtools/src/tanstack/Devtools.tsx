@@ -1886,6 +1886,7 @@ const QueryDetails = () => {
 
     const newState = {
       status: 'error' as const,
+      fetchStatus: 'idle' as const,
       error,
       fetchMeta: {
         ...currentFetchMeta,  // ← Используем захваченное значение
@@ -1895,31 +1896,12 @@ const QueryDetails = () => {
       } as any,
     } as QueryState<unknown, Error>
 
-    console.log('[DEBUG] Trigger Error: calling setState', {
-      newState,
-      newStateFetchMeta: newState.fetchMeta,
-    })
-
     activeQueryVal.setState(newState)
-
-    console.log('[DEBUG] Trigger Error: after setState', {
-      newStateFromQuery: activeQueryVal.state,
-      fetchMetaAfter: activeQueryVal.state.fetchMeta,
-    })
   }
 
   const restoreQueryAfterLoadingOrError = () => {
     const activeQueryVal = activeQuery()
-    if (!activeQueryVal) {
-      console.log('[DEBUG] restoreQueryAfterLoadingOrError: no activeQuery')
-      return
-    }
-
-    console.log('[DEBUG] restoreQueryAfterLoadingOrError: start', {
-      queryHash: activeQueryVal.queryHash,
-      currentState: activeQueryVal.state,
-      fetchMeta: activeQueryVal.state.fetchMeta,
-    })
+    if (!activeQueryVal) return
 
     sendDevToolsEvent({
       type: 'RESTORE_LOADING',
@@ -1931,13 +1913,6 @@ const QueryDetails = () => {
     const previousData = (activeQueryVal.state.fetchMeta as any).__previousData
     const previousStatus = (activeQueryVal.state.fetchMeta as any).__previousStatus || 'pending'
 
-    console.log('[DEBUG] restoreQueryAfterLoadingOrError: extracted data', {
-      previousOptions,
-      previousData,
-      previousStatus,
-      hasFetchMeta: true,
-    })
-
     activeQueryVal.cancel({ silent: true })
 
     const newState = {
@@ -1948,13 +1923,7 @@ const QueryDetails = () => {
       fetchMeta: null,
     }
 
-    console.log('[DEBUG] restoreQueryAfterLoadingOrError: calling setState', newState)
-
     activeQueryVal.setState(newState)
-
-    console.log('[DEBUG] restoreQueryAfterLoadingOrError: after setState', {
-      newStateFromQuery: activeQueryVal.state,
-    })
 
     // mobx-query: не нужно вызывать fetch, данные уже восстановлены
     // if (previousOptions) {
@@ -2162,11 +2131,6 @@ const QueryDetails = () => {
                 const activeQueryVal = activeQuery()
                 if (!activeQueryVal) return
 
-                console.log('[DEBUG] Trigger Loading: start', {
-                  queryHash: activeQueryVal.queryHash,
-                  currentState: activeQueryVal.state,
-                })
-
                 sendDevToolsEvent({
                   type: 'TRIGGER_LOADING',
                   queryHash: activeQueryVal.queryHash,
@@ -2175,12 +2139,6 @@ const QueryDetails = () => {
                 // mobx-query: сохраняем предыдущие данные для восстановления
                 const __previousData = activeQueryVal.state.data
                 const __previousStatus = activeQueryVal.state.status
-
-                console.log('[DEBUG] Trigger Loading: saving', {
-                  __previousQueryOptions,
-                  __previousData,
-                  __previousStatus,
-                })
 
                 // Trigger a fetch in order to trigger suspense as well.
                 activeQueryVal.fetch({
@@ -2196,6 +2154,7 @@ const QueryDetails = () => {
                 const newState = {
                   data: undefined,
                   status: 'pending',
+                  fetchStatus: 'fetching',
                   fetchMeta: {
                     ...activeQueryVal.state.fetchMeta,
                     __previousQueryOptions,
@@ -2204,13 +2163,7 @@ const QueryDetails = () => {
                   } as any,
                 } as QueryState<unknown, Error>
 
-                console.log('[DEBUG] Trigger Loading: calling setState', newState)
-
                 activeQueryVal.setState(newState)
-
-                console.log('[DEBUG] Trigger Loading: after setState', {
-                  newStateFromQuery: activeQueryVal.state,
-                })
               }
             }}
           >

@@ -275,7 +275,6 @@ export default function Explorer(props: ExplorerProps) {
     return theme() === 'dark' ? darkStyles(css) : lightStyles(css)
   })
   const queryClient = useQueryDevtoolsContext().client
-  console.log(queryClient.setQueryData)
 
   const [expanded, setExpanded] = createSignal(
     (props.defaultExpanded || []).includes(props.label),

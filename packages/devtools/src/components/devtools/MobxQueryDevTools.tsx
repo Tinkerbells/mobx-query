@@ -48,9 +48,15 @@ class StoreQuery implements Query {
   private prevData: unknown
   private prevError: unknown
   private _fetchMeta: any = null  // ← Добавляем хранилище для fetchMeta
+  private previewState: QueryState | null = null
+  private readonly notifyStateChange: () => void
 
-  constructor(model: QueryModel) {
+  constructor(
+    model: QueryModel,
+    notifyStateChange: () => void,
+  ) {
     this.model = model
+    this.notifyStateChange = notifyStateChange
     this.prevData = model.data
     this.prevError = model.error
     this.lastUpdatedAt = Date.now()
@@ -74,6 +80,8 @@ class StoreQuery implements Query {
   }
 
   get state(): QueryState {
+    if (this.previewState) return this.previewState
+
     return {
       data: this.model.data as never,
       dataUpdatedAt: this.lastUpdatedAt,
@@ -106,21 +114,33 @@ class StoreQuery implements Query {
   }
 
   setState(nextState: Partial<QueryState>) {
-    console.log('[setState] called', {
-      queryHash: this.queryHash,
-      hasData: 'data' in nextState,
-      hasStatus: !!nextState.status,
-      hasFetchMeta: 'fetchMeta' in nextState,
-      currentData: this.model.data,
-      newData: nextState.data,
-    })
+    const isRestoringDevtoolsState =
+      nextState.fetchMeta === null && this._fetchMeta !== null
+
+    if (isRestoringDevtoolsState) {
+      this.previewState = null
+      this._fetchMeta = null
+      this.notifyStateChange()
+      return
+    }
+
+    const isDevtoolsPreview =
+      nextState.fetchMeta !== undefined &&
+      nextState.fetchMeta !== null &&
+      typeof nextState.fetchMeta === 'object' &&
+      ('__previousData' in nextState.fetchMeta ||
+        '__previousStatus' in nextState.fetchMeta)
+
+    if (isDevtoolsPreview) {
+      this.previewState = { ...this.state, ...nextState }
+      this._fetchMeta = nextState.fetchMeta
+      this.notifyStateChange()
+      return
+    }
 
     // Изменение данных - используем setData (вызывает forceUpdate на instance)
-    // ВАЖНО: проверяем наличие ключа 'data', а не значение (может быть undefined)
     if ('data' in nextState) {
-      console.log('[setState] calling setData')
       this.model.setData(nextState.data)
-      console.log('[setState] setData completed, new model.data:', this.model.data)
     }
     // Изменение ошибки
     if (nextState.error !== undefined && nextState.error !== null) {
@@ -138,6 +158,7 @@ class StoreQuery implements Query {
     if ('fetchMeta' in nextState) {
       this._fetchMeta = nextState.fetchMeta
     }
+    this.notifyStateChange()
   }
 
   private applyStatus(status: QueryStatus) {
@@ -198,6 +219,9 @@ class StoreQuery implements Query {
       !this.model.isError
   }
   fetch(options?: any) {
+    // TanStack's "Trigger Loading" passes a never-resolving queryFn. Preview
+    // that state without invoking the application's actual executor.
+    if (options?.queryFn) return Promise.resolve(options)
     this.model.refetch()
     return Promise.resolve(options)
   }
@@ -273,7 +297,10 @@ class StoreQueryCache implements QueryCache {
         this.notify({ type: 'queryUpdated', query: existing })
         return
       }
-      const proxy = new StoreQuery(model)
+      let proxy!: StoreQuery
+      proxy = new StoreQuery(model, () => {
+        this.notify({ type: 'queryUpdated', query: proxy })
+      })
       next.set(model.hash, proxy)
       this.notify({ type: 'queryAdded', query: proxy })
     })

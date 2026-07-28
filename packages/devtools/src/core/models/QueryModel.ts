@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx'
 import type {
   MobxQueryDevtoolsEntry,
   MobxQueryDevtoolsQuery,
+  MobxQueryDevtoolsState,
 } from '@tinkerbells88/mobx-query'
 
 /** View model used by the TanStack-compatible presentation layer. */
@@ -10,6 +11,7 @@ export class QueryModel {
   public readonly key: unknown[]
   private typeValue: MobxQueryDevtoolsEntry['type']
   private query: MobxQueryDevtoolsQuery
+  private devtoolsStateOverride: Partial<MobxQueryDevtoolsState> | null = null
 
   constructor(
     hash: string,
@@ -33,7 +35,11 @@ export class QueryModel {
   }
 
   private get state() {
-    return this.query.getDevtoolsState()
+    const state = this.query.getDevtoolsState()
+
+    return this.devtoolsStateOverride
+      ? { ...state, ...this.devtoolsStateOverride }
+      : state
   }
 
   get data() {
@@ -103,10 +109,48 @@ export class QueryModel {
     this.query.forceUpdate?.(data)
   }
 
-  // The TanStack-compatible UI exposes these controls. Mobx Query has no safe
-  // public equivalent, so they intentionally remain read-only.
-  public setIsLoading(_value: boolean) {}
-  public setIsSuccess(_value: boolean) {}
-  public setIsError(_value: boolean) {}
-  public setError(_value: unknown) {}
+  /**
+   * Applies a devtools-only state preview. It is deliberately kept outside of
+   * the query's real cache/status storage, so debug actions never affect the
+   * running application or trigger a request.
+   */
+  public setDevtoolsState(state: Partial<MobxQueryDevtoolsState>) {
+    this.devtoolsStateOverride = {
+      ...this.devtoolsStateOverride,
+      ...state,
+    }
+  }
+
+  public clearDevtoolsState() {
+    this.devtoolsStateOverride = null
+  }
+
+  public setIsLoading(value: boolean) {
+    this.setDevtoolsState({
+      isLoading: value,
+      ...(value
+        ? { isIdle: false, isSuccess: false, isError: false, error: undefined }
+        : {}),
+    })
+  }
+
+  public setIsSuccess(value: boolean) {
+    this.setDevtoolsState({
+      isSuccess: value,
+      ...(value
+        ? { isIdle: false, isLoading: false, isError: false, error: undefined }
+        : {}),
+    })
+  }
+
+  public setIsError(value: boolean) {
+    this.setDevtoolsState({
+      isError: value,
+      ...(value ? { isIdle: false, isLoading: false, isSuccess: false } : {}),
+    })
+  }
+
+  public setError(error: unknown) {
+    this.setDevtoolsState({ error, isIdle: false, isLoading: false, isSuccess: false, isError: true })
+  }
 }
