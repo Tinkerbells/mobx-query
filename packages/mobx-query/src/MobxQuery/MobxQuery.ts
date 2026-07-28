@@ -26,7 +26,14 @@ import { type StatusStorage, StatusStorageFactory } from '../StatusStorage';
 import { SynchronizationService } from '../SynchronizationService';
 import type { CacheKey, FetchPolicy } from '../types';
 
-import type { CachedQuery, KeyHash, Keys, UnknownCachedQuery } from './types';
+import type {
+  CachedQuery,
+  KeyHash,
+  Keys,
+  MobxQueryDevtoolsEntry,
+  MobxQueryDevtoolsQuery,
+  UnknownCachedQuery,
+} from './types';
 
 /**
  * Стандартный обработчик ошибки запроса,
@@ -185,6 +192,19 @@ export class MobxQuery<TDefaultError = void> {
   private queriesMap = new AdaptableMap<UnknownCachedQuery>();
 
   /**
+   * Listeners are deliberately plain JS callbacks: the cache itself stays
+   * weak-reference based and does not retain query instances for devtools.
+   */
+  private readonly devtoolsListeners = new Set<() => void>();
+
+  private readonly devtoolsMutations = new Map<
+    string,
+    WeakRef<Mutation<unknown, unknown, unknown>>
+  >();
+
+  private nextDevtoolsMutationId = 0;
+
+  /**
    * Фабрика создания хранилищ данных для обычного Query
    */
   private queryDataStorageFactory = new DataStorageFactory();
@@ -305,6 +325,59 @@ export class MobxQuery<TDefaultError = void> {
     // чтобы сборщик мусора мог удалить неиспользуемые квери
     this.queriesMap.convertToWeak(keyHash);
     this.pollingService.clean(keyHash);
+    this.notifyDevtools();
+  };
+
+  /**
+   * Public, side-effect-free integration point for developer tools.
+   * Consumers must use each query's `getDevtoolsState` instead of `data`;
+   * the latter may intentionally start an automatic fetch.
+   */
+  public getDevtoolsEntries = (): MobxQueryDevtoolsEntry[] => {
+    const entries: MobxQueryDevtoolsEntry[] = [];
+
+    this.keys.forEach((queryKey, hash) => {
+      const query = this.queriesMap.get(hash);
+
+      if (!query) return;
+
+      const type = 'fetchMore' in query ? 'infinite' : 'query';
+      entries.push({
+        hash,
+        key: queryKey.slice(0, -1),
+        type,
+        query: query as unknown as MobxQueryDevtoolsQuery,
+      });
+    });
+
+    this.devtoolsMutations.forEach((reference, hash) => {
+      const mutation = reference.deref();
+
+      if (!mutation) {
+        this.devtoolsMutations.delete(hash);
+        return;
+      }
+
+      entries.push({
+        hash,
+        key: ['mutation', hash],
+        type: 'mutation',
+        query: mutation as unknown as MobxQueryDevtoolsQuery,
+      });
+    });
+
+    return entries;
+  };
+
+  /** Subscribes to cache-entry changes; call the returned disposer on unmount. */
+  public subscribeDevtools = (listener: () => void) => {
+    this.devtoolsListeners.add(listener);
+
+    return () => this.devtoolsListeners.delete(listener);
+  };
+
+  private notifyDevtools = () => {
+    this.devtoolsListeners.forEach((listener) => listener());
   };
 
   /**
@@ -440,6 +513,7 @@ export class MobxQuery<TDefaultError = void> {
     );
 
     this.keys.set(keys.queryKeyHash, keys.queryKey);
+    this.notifyDevtools();
 
     return query;
   };
@@ -556,11 +630,21 @@ export class MobxQuery<TDefaultError = void> {
   >(
     executor: MutationExecutor<TResult, TExecutorParams>,
     params?: CreateMutationParams<TResult, TError>,
-  ) =>
-    new Mutation<TResult, TError, TExecutorParams>(executor, {
+  ) => {
+    const mutation = new Mutation<TResult, TError, TExecutorParams>(executor, {
       ...params,
       onError: params?.onError || this.defaultErrorHandler,
     });
+
+    const hash = `mutation-${this.nextDevtoolsMutationId++}`;
+    this.devtoolsMutations.set(
+      hash,
+      new WeakRef(mutation as unknown as Mutation<unknown, unknown, unknown>),
+    );
+    this.notifyDevtools();
+
+    return mutation;
+  };
 
   /**
    * Создает набор queries под одним ключем

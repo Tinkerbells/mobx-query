@@ -1,28 +1,8 @@
-import { makeAutoObservable, runInAction } from 'mobx';
-
-type QueryInstance = {
-  data?: unknown;
-  error?: unknown;
-  isLoading?: boolean;
-  isSuccess?: boolean;
-  isError?: boolean;
-  isEndReached?: boolean;
-  background?: {
-    isLoading: boolean;
-    isSuccess: boolean;
-    isError: boolean;
-  } | null;
-  sync?: () => void;
-  invalidate?: () => void;
-  fetchMore?: () => void;
-  forceUpdate?: (payload: unknown) => void;
-  statusStorage?: {
-    isLoading: boolean;
-    isError: boolean;
-    isSuccess: boolean;
-    error: unknown;
-  };
-};
+import { makeAutoObservable } from 'mobx';
+import type {
+  MobxQueryDevtoolsEntry,
+  MobxQueryDevtoolsQuery,
+} from '@tinkerbells88/mobx-query';
 
 /**
  * ViewModel для конкретного Query/InfiniteQuery.
@@ -31,104 +11,90 @@ type QueryInstance = {
 export class QueryModel {
   public readonly hash: string;
   public readonly key: unknown[];
-  private instance: QueryInstance;
+  private typeValue: MobxQueryDevtoolsEntry['type'];
+  private query: MobxQueryDevtoolsQuery;
 
-  constructor(hash: string, key: unknown[], instance: QueryInstance) {
+  constructor(
+    hash: string,
+    key: unknown[],
+    type: MobxQueryDevtoolsEntry['type'],
+    query: MobxQueryDevtoolsQuery,
+  ) {
     this.hash = hash;
     this.key = key;
-    this.instance = instance;
+    this.typeValue = type;
+    this.query = query;
 
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  public updateInstance(instance: QueryInstance) {
-    this.instance = instance;
+  public updateQuery(
+    query: MobxQueryDevtoolsQuery,
+    type: MobxQueryDevtoolsEntry['type'],
+  ) {
+    this.query = query;
+    this.typeValue = type;
+  }
+
+  private get state() {
+    return this.query.getDevtoolsState();
   }
 
   get data() {
-    return this.instance?.data;
+    return this.state.data;
   }
 
   get error() {
-    return this.instance?.error;
+    return this.state.error;
   }
 
   get isLoading() {
-    return Boolean(this.instance?.isLoading);
+    return this.state.isLoading;
   }
 
   get isSuccess() {
-    return Boolean(this.instance?.isSuccess);
+    return this.state.isSuccess;
   }
 
   get isError() {
-    return Boolean(this.instance?.isError);
+    return this.state.isError;
   }
 
   get isEndReached() {
-    return this.instance?.isEndReached;
+    return this.state.isEndReached;
   }
 
-  get type(): 'query' | 'infinite' | 'mutation' {
-    if (this.instance && 'fetchMore' in this.instance) {
-      return 'infinite';
-    }
+  get isIdle() {
+    return this.state.isIdle;
+  }
 
-    if (this.instance && 'data' in this.instance) {
-      return 'query';
-    }
-
-    return 'mutation';
+  get type() {
+    return this.typeValue;
   }
 
   public refetch() {
-    if (typeof this.instance?.sync === 'function') {
-      this.instance.sync();
+    if (this.type !== 'mutation') {
+      this.query.sync?.();
     }
   }
 
   public fetchMore() {
-    if (typeof this.instance?.fetchMore === 'function') {
-      this.instance.fetchMore();
+    if (this.type === 'infinite') {
+      this.query.fetchMore?.();
     }
   }
 
   public invalidate() {
-    if (typeof this.instance?.invalidate === 'function') {
-      this.instance.invalidate();
+    if (this.type !== 'mutation') {
+      this.query.invalidate?.();
     }
-  }
-
-  public setIsLoading(loading: boolean) {
-    const status = (this.instance as { statusStorage?: QueryInstance['statusStorage'] })?.statusStorage;
-
-    if (!status) return;
-
-    runInAction(() => {
-      status.isLoading = loading;
-      if (loading) {
-        status.isError = false;
-        status.isSuccess = false;
-      }
-    });
   }
 
   public setData(newData: unknown) {
-    if (typeof this.instance?.forceUpdate === 'function') {
-      this.instance.forceUpdate(newData);
+    if (this.type === 'infinite' && !Array.isArray(newData)) {
+      throw new TypeError('Infinite query data must be a JSON array');
     }
-  }
 
-  public setError(error: unknown) {
-    const status = (this.instance as { statusStorage?: QueryInstance['statusStorage'] })?.statusStorage;
-
-    if (!status) return;
-
-    runInAction(() => {
-      status.isError = true;
-      status.error = error;
-      status.isLoading = false;
-      status.isSuccess = false;
-    });
+    this.query.forceUpdate?.(newData);
   }
 }

@@ -3,15 +3,13 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import type { DevToolsAdapter } from './adapter';
 import { QueryModel } from './models/QueryModel';
 
-const SYNC_INTERVAL = 1000;
-
 export class DevToolsStore {
   public isOpen: boolean;
   public searchTerm: string;
   public selectedQueryHash: string | null;
   public queryModels: QueryModel[];
 
-  private syncTimer?: number;
+  private unsubscribe?: () => void;
   private readonly adapter: DevToolsAdapter;
 
   constructor(adapter: DevToolsAdapter) {
@@ -23,11 +21,10 @@ export class DevToolsStore {
 
     makeAutoObservable(this, {}, { autoBind: true });
     this.sync();
-    this.startSyncLoop();
   }
 
   public destroy() {
-    this.stopSyncLoop();
+    this.stopListening();
   }
 
   public toggleOpen() {
@@ -35,9 +32,9 @@ export class DevToolsStore {
 
     if (this.isOpen) {
       this.sync();
-      this.startSyncLoop();
+      this.startListening();
     } else {
-      this.stopSyncLoop();
+      this.stopListening();
     }
   }
 
@@ -72,21 +69,24 @@ export class DevToolsStore {
     const snapshots = this.adapter.list();
     const map = new Map(this.queryModels.map((m) => [m.hash, m]));
 
-    const nextModels = snapshots.map(({ hash, key, instance }) => {
+    const nextModels = snapshots.map(({ hash, key, type, query }) => {
       const existing = map.get(hash);
 
       if (existing) {
-        existing.updateInstance(instance as never);
+        existing.updateQuery(query, type);
         return existing;
       }
 
-      return new QueryModel(hash, key, instance as never);
+      return new QueryModel(hash, key, type, query);
     });
 
     runInAction(() => {
       this.queryModels = nextModels;
 
-      if (this.selectedQueryHash && !this.adapter.has(this.selectedQueryHash)) {
+      if (
+        this.selectedQueryHash &&
+        !nextModels.some((model) => model.hash === this.selectedQueryHash)
+      ) {
         this.selectedQueryHash = nextModels[0]?.hash ?? null;
       }
 
@@ -97,16 +97,14 @@ export class DevToolsStore {
     });
   }
 
-  private startSyncLoop() {
-    if (this.syncTimer) return;
+  private startListening() {
+    if (this.unsubscribe) return;
 
-    this.syncTimer = window.setInterval(this.sync, SYNC_INTERVAL);
+    this.unsubscribe = this.adapter.subscribe(this.sync);
   }
 
-  private stopSyncLoop() {
-    if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = undefined;
-    }
+  private stopListening() {
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
   }
 }

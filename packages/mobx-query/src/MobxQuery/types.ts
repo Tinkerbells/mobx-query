@@ -1,6 +1,9 @@
 import { type InfiniteQuery } from '../InfiniteQuery';
 import { type Query } from '../Query';
-import { type CacheKey } from '../types';
+import {
+  type CacheKey,
+  type MobxQueryDevtoolsState,
+} from '../types';
 
 /**
  * Внутриний тип кешируемого стора
@@ -25,4 +28,19 @@ export type Keys = {
   statusKeyHash: KeyHash;
   queryKeyHash: KeyHash;
   backgroundStatusKeyHash: KeyHash;
+};
+
+export type MobxQueryDevtoolsQuery = {
+  getDevtoolsState: () => MobxQueryDevtoolsState;
+  sync?: () => void;
+  invalidate?: () => void;
+  fetchMore?: () => void;
+  forceUpdate?: (data: unknown) => void;
+};
+
+export type MobxQueryDevtoolsEntry = {
+  hash: string;
+  key: CacheKey[];
+  type: 'query' | 'infinite' | 'mutation';
+  query: MobxQueryDevtoolsQuery;
 };

@@ -67,3 +67,26 @@ export type CacheKey =
   | undefined
   | CacheKey[]
   | { [key: string]: CacheKey };
+
+/** A side-effect-free state snapshot intended for developer tooling. */
+export type MobxQueryDevtoolsState = {
+  data: unknown;
+  error: unknown;
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  isIdle: boolean;
+  isEndReached?: boolean;
+  isStartReached?: boolean;
+  background: {
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+  } | null;
+  fetchMore?: {
+    isLoading: boolean;
+    isSuccess: boolean;
+    isError: boolean;
+    error?: unknown;
+  };
+};

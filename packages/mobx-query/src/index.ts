@@ -9,8 +9,10 @@ export {
   type CreateInfiniteQueryParams,
   type CreateMutationParams,
   type CreateQueryParams,
+  type MobxQueryDevtoolsEntry,
+  type MobxQueryDevtoolsQuery,
 } from './MobxQuery';
 
 export type { InfiniteQuerySet, MutationSet, QuerySet } from './Sets';
 
-export type { CacheKey, FetchPolicy } from './types';
+export type { CacheKey, FetchPolicy, MobxQueryDevtoolsState } from './types';

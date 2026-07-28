@@ -1,7 +1,12 @@
 import { action, makeObservable } from 'mobx';
 
 import { AuxiliaryQuery } from '../AuxiliaryQuery';
-import type { QueryBaseActions, Sync, SyncParams } from '../types';
+import type {
+  MobxQueryDevtoolsState,
+  QueryBaseActions,
+  Sync,
+  SyncParams,
+} from '../types';
 import { QueryContainer } from '../QueryContainer';
 import { StatusStorage } from '../StatusStorage';
 
@@ -77,4 +82,14 @@ export class Mutation<TResult, TError = void, TExecutorParams = void>
   public async = (params: TExecutorParams) => {
     return this.auxiliary.getUnifiedPromise(() => this.executor(params));
   };
+
+  public getDevtoolsState = (): MobxQueryDevtoolsState => ({
+    data: undefined,
+    error: this.error,
+    isLoading: this.isLoading,
+    isSuccess: this.isSuccess,
+    isError: this.isError,
+    isIdle: this.isIdle,
+    background: null,
+  });
 }

@@ -348,4 +348,34 @@ describe('MobxQuery', () => {
 
     expect(query.background).not.toBeNull();
   });
+
+  it('Devtools snapshot не запускает enabledAutoFetch', () => {
+    const executor = vi.fn(() => Promise.resolve('data'));
+    const mobxQuery = new MobxQuery({ enabledAutoFetch: true });
+
+    mobxQuery.createQuery(['foo'], executor);
+    const [entry] = mobxQuery.getDevtoolsEntries();
+
+    expect(entry?.query.getDevtoolsState().data).toBeUndefined();
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it('Devtools получает уведомления о новых query и mutation', () => {
+    const mobxQuery = new MobxQuery();
+    const listener = vi.fn();
+    const dispose = mobxQuery.subscribeDevtools(listener);
+
+    mobxQuery.createQuery(['query'], () => Promise.resolve('data'));
+    mobxQuery.createMutation(() => Promise.resolve('data'));
+
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(mobxQuery.getDevtoolsEntries().map(({ type }) => type)).toEqual([
+      'query',
+      'mutation',
+    ]);
+
+    dispose();
+    mobxQuery.createQuery(['another-query'], () => Promise.resolve('data'));
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
 });

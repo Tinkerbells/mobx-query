@@ -11,6 +11,18 @@ const jsonEditText = ref('');
 const isEditing = ref(false);
 const jsonError = ref<string | null>(null);
 
+const formatValue = (value: unknown) => {
+  if (value instanceof Error) {
+    return `${value.name}: ${value.message}`;
+  }
+
+  try {
+    return value === undefined ? '' : JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+};
+
 watch(
   () => query.value?.hash,
   () => {
@@ -24,7 +36,7 @@ watch(
   (newData) => {
     if (!isEditing.value) {
       jsonEditText.value =
-        newData === undefined ? '' : JSON.stringify(newData, null, 2);
+        formatValue(newData);
     }
   },
   { immediate: true },
@@ -40,9 +52,8 @@ const handleSaveData = () => {
   }
 };
 
-const toggleLoading = (e: Event) => {
-  const val = (e.target as HTMLInputElement).checked;
-  query.value?.setIsLoading(val);
+const clearJsonError = () => {
+  jsonError.value = null;
 };
 </script>
 
@@ -54,13 +65,13 @@ const toggleLoading = (e: Event) => {
       <div class="mq-toolbar">
         <h2 class="mq-title">Query Details</h2>
         <div class="mq-actions">
-          <button class="mq-btn mq-btn-primary" type="button" @click="query.refetch()">
+          <button class="mq-btn mq-btn-primary" type="button" @click="query.refetch()" :disabled="query.type === 'mutation'">
             Refetch
           </button>
           <button class="mq-btn" type="button" @click="query.fetchMore()" :disabled="query.type !== 'infinite'">
             Fetch more
           </button>
-          <button class="mq-btn mq-btn-danger" type="button" @click="query.invalidate()">
+          <button class="mq-btn mq-btn-danger" type="button" @click="query.invalidate()" :disabled="query.type === 'mutation'">
             Invalidate
           </button>
         </div>
@@ -75,10 +86,7 @@ const toggleLoading = (e: Event) => {
         <div class="mq-section">
           <label>State</label>
           <div class="mq-control-grid">
-            <label class="mq-checkbox-label">
-              <input type="checkbox" :checked="query.isLoading" @change="toggleLoading" />
-              <span class="mq-status-text" :class="{ active: query.isLoading }">isLoading</span>
-            </label>
+            <span class="mq-status-text" :class="{ active: query.isLoading }">isLoading: {{ query.isLoading }}</span>
             <label class="mq-checkbox-label">
               <input type="checkbox" disabled :checked="query.isSuccess" />
               <span class="mq-status-text success">isSuccess</span>
@@ -91,13 +99,14 @@ const toggleLoading = (e: Event) => {
               <input type="checkbox" disabled :checked="query.isEndReached" />
               <span class="mq-status-text">isEndReached</span>
             </label>
+            <span class="mq-status-text">isIdle: {{ query.isIdle }}</span>
           </div>
         </div>
 
         <div class="mq-section">
           <div class="mq-label-row">
             <label>Data</label>
-            <button class="mq-xs-btn" type="button" @click="handleSaveData" :disabled="Boolean(jsonError)">
+            <button class="mq-xs-btn" type="button" @click="handleSaveData" :disabled="query.type === 'mutation'">
               Apply Changes
             </button>
           </div>
@@ -106,8 +115,10 @@ const toggleLoading = (e: Event) => {
               v-model="jsonEditText"
               class="mq-json-textarea"
               spellcheck="false"
+              :disabled="query.type === 'mutation'"
               @focus="isEditing = true"
               @blur="isEditing = false"
+              @input="clearJsonError"
             ></textarea>
             <div v-if="jsonError" class="mq-json-error">{{ jsonError }}</div>
           </div>
@@ -116,7 +127,7 @@ const toggleLoading = (e: Event) => {
         <div class="mq-section">
           <label>Error</label>
           <div class="mq-json-viewer mq-border-error">
-            <pre>{{ JSON.stringify(query.error, null, 2) }}</pre>
+            <pre>{{ formatValue(query.error) }}</pre>
           </div>
         </div>
       </div>

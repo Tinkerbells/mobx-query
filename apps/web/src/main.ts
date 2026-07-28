@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
-import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools'
+import { mountMobxQueryDevtools } from '@tinkerbells88/mobx-query-devtools'
 import { cacheService } from './stores/cache'
 
 const app = createApp(App)

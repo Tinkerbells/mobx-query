@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tinkerbells88/mobx-query": "workspace:*",
-    "@tinkerbells/mobx-query-devtools": "workspace:*",
+    "@tinkerbells88/mobx-query-devtools": "workspace:*",
     "mobx": "^6.15.0",
     "mobx-vue-lite": "^0.4.3",
     "vue": "^3.5.24"

@@ -1,22 +1,12 @@
-import type { MobxQuery } from '@tinkerbells88/mobx-query';
-
-export type QuerySnapshot = {
-  hash: string;
-  key: unknown[];
-  instance: unknown;
-};
-
-type MobxQueryInternals = {
-  keys?: Map<string, unknown[]>;
-  queriesMap?: {
-    get: (key: string) => unknown;
-    has: (key: string) => boolean;
-  };
-};
+import type {
+  MobxQuery,
+  MobxQueryDevtoolsEntry,
+} from '@tinkerbells88/mobx-query';
 
 /**
- * Адаптер для доступа к приватным структурам MobxQuery.
- * Требуется для того, чтобы получить список созданных квери.
+ * Адаптер поверх публичного devtools API MobxQuery.
+ * Он не обращается к `query.data`, потому что этот getter может инициировать
+ * auto-fetch в прикладном коде.
  */
 export class DevToolsAdapter {
   private readonly client: MobxQuery;
@@ -25,32 +15,11 @@ export class DevToolsAdapter {
     this.client = client;
   }
 
-  private get internals(): MobxQueryInternals {
-    return this.client as unknown as MobxQueryInternals;
+  public list(): MobxQueryDevtoolsEntry[] {
+    return this.client.getDevtoolsEntries();
   }
 
-  public list(): QuerySnapshot[] {
-    const keys = this.internals.keys;
-    const queriesMap = this.internals.queriesMap;
-
-    if (!keys || !queriesMap) {
-      return [];
-    }
-
-    const snapshots: QuerySnapshot[] = [];
-
-    keys.forEach((key, hash) => {
-      const instance = queriesMap.get(hash);
-
-      if (instance) {
-        snapshots.push({ hash, key, instance });
-      }
-    });
-
-    return snapshots;
-  }
-
-  public has(hash: string) {
-    return Boolean(this.internals.queriesMap?.has(hash));
+  public subscribe(listener: () => void) {
+    return this.client.subscribeDevtools(listener);
   }
 }

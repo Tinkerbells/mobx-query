@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "browser": "./src/index.ts",
   "main": "./src/index.ts",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "build": "npm run clean && npm run bundle && npm run build:package",
     "bundle": "tsdown --config tsdown.config.mts",

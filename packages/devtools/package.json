@@ -1,5 +1,5 @@
 {
-  "name": "@tinkerbells/mobx-query-devtools",
+  "name": "@tinkerbells88/mobx-query-devtools",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/mobx-query-devtools.cjs.js",
@@ -8,18 +8,24 @@
   "exports": {
     ".": {
       "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/mobx-query-devtools.es.js",
-      "require": "./dist/mobx-query-devtools.cjs.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/mobx-query-devtools.cjs.js"
     }
   },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && node scripts/prepare-package.cjs",
+    "preview": "vite preview",
+    "lint:types": "vue-tsc -b",
+    "release": "semantic-release"
   },
   "dependencies": {
     "@tinkerbells88/mobx-query": "workspace:*",

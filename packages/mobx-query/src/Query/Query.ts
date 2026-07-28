@@ -1,7 +1,13 @@
 import { action, computed, makeObservable, when } from 'mobx';
 
 import { AuxiliaryQuery } from '../AuxiliaryQuery';
-import type { FetchPolicy, QueryBaseActions, Sync, SyncParams } from '../types';
+import type {
+  FetchPolicy,
+  MobxQueryDevtoolsState,
+  QueryBaseActions,
+  Sync,
+  SyncParams,
+} from '../types';
 import type { DataStorage } from '../DataStorage';
 import { QueryContainer } from '../QueryContainer';
 import { type StatusStorage } from '../StatusStorage';
@@ -212,6 +218,20 @@ export class Query<
 
     return this.auxiliary.getUnifiedPromise(this.executor, this.submitSuccess);
   };
+
+  /**
+   * Returns cached state without reading `data`, so inspection cannot trigger
+   * an auto-fetch or revalidate an invalid query.
+   */
+  public getDevtoolsState = (): MobxQueryDevtoolsState => ({
+    data: this.storage.data,
+    error: this.error,
+    isLoading: this.isLoading,
+    isSuccess: this.isSuccess,
+    isError: this.isError,
+    isIdle: this.isIdle,
+    background: this.background,
+  });
 
   /**
    * Содержит реактивные данные

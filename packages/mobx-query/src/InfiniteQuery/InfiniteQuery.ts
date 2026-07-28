@@ -1,6 +1,12 @@
 import { action, computed, makeObservable, when } from 'mobx';
 
-import type { FetchPolicy, QueryBaseActions, Sync, SyncParams } from '../types';
+import type {
+  FetchPolicy,
+  MobxQueryDevtoolsState,
+  QueryBaseActions,
+  Sync,
+  SyncParams,
+} from '../types';
 import { AuxiliaryQuery } from '../AuxiliaryQuery';
 import type { DataStorage } from '../DataStorage';
 import { QueryContainer } from '../QueryContainer';
@@ -470,6 +476,20 @@ export class InfiniteQuery<
       (data) => this.submitSuccess(data, this.calcIsLimitReachedByResult(data)),
     );
   };
+
+  /** Returns cached state without invoking the auto-fetching `data` getter. */
+  public getDevtoolsState = (): MobxQueryDevtoolsState => ({
+    data: this.storage.data?.data,
+    error: this.error,
+    isLoading: this.isLoading,
+    isSuccess: this.isSuccess,
+    isError: this.isError,
+    isIdle: this.isIdle,
+    isEndReached: this.isEndReached,
+    isStartReached: this.isStartReached,
+    background: this.background,
+    fetchMore: this.fetchMoreStatus,
+  });
 
   private get computedData() {
     return this.storage.data?.data;
