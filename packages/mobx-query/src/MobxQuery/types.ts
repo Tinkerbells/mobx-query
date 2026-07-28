@@ -2,6 +2,7 @@ import { type InfiniteQuery } from '../InfiniteQuery';
 import { type Query } from '../Query';
 import {
   type CacheKey,
+  type FetchPolicy,
   type MobxQueryDevtoolsState,
 } from '../types';
 

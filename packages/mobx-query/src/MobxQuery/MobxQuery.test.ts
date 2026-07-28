@@ -401,7 +401,8 @@ describe('MobxQuery', () => {
       retained: true,
     });
     expect(events).toContain('created');
-    expect(mobxQuery.getDevtoolsEvents().at(-1)?.type).toBe('created');
+    const devtoolsEvents = mobxQuery.getDevtoolsEvents();
+    expect(devtoolsEvents[devtoolsEvents.length - 1]?.type).toBe('created');
 
     dispose();
   });
