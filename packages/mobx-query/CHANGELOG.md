@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/Tinkerbells/mobx-query/compare/v1.0.0...v1.1.0) (2026-07-28)
+
+
+### Features
+
+* **devtools:** migrate to solid tanstack panel ([e658474](https://github.com/Tinkerbells/mobx-query/commit/e65847479028110daf9fddcfed0616c2e7c7d27c))
+* **devtools:** publish initial npm package ([bafc666](https://github.com/Tinkerbells/mobx-query/commit/bafc66604f61dea798042b5dfa4a84af04f1b4dc))
+
 # 1.0.0 (2026-07-28)
 
 
