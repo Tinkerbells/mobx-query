@@ -1,22 +1,54 @@
-import { action, computed, makeObservable, when } from 'mobx';
+import { action, computed, makeObservable, when } from "mobx";
 
-import type { FetchPolicy, QueryBaseActions, Sync, SyncParams } from '../types';
-import { AuxiliaryQuery } from '../AuxiliaryQuery';
-import type { DataStorage } from '../DataStorage';
-import { QueryContainer } from '../QueryContainer';
-import { type StatusStorage } from '../StatusStorage';
+import type { FetchPolicy, QueryBaseActions, Sync, SyncParams } from "../types";
+import { AuxiliaryQuery } from "../AuxiliaryQuery";
+import type { DataStorage } from "../DataStorage";
+import { QueryContainer } from "../QueryContainer";
+import { StatusStorage } from "../StatusStorage";
 
 export const DEFAULT_INFINITE_ITEMS_COUNT = 30;
 
-export type InfiniteParams = {
+export type FetchMoreDirection = "forward" | "backward";
+
+export type InfiniteFetchMoreOptions<TResult> = {
+  /**
+   * Направление для дозапроса данных
+   * @default 'forward'
+   */
+  direction?: FetchMoreDirection;
+  /**
+   * Колбэк, вызываемый при успешном запросе, подразумевается использование, для запоминания последней успешной позиции
+   */
+  onSuccess?: (params: { offset: number; cursor: TResult }) => void;
+};
+
+export type InfiniteParams<TResult> = {
+  /**
+   * Смещение, от которого требуется сделать запрос
+   * @default 0
+   */
   offset: number;
+  /**
+   * Количество запрашиваемых элементов
+   * @default 30
+   */
   count: number;
+  /**
+   * Элемент использующийся в качестве точки отсчета при курсорной пагинации.
+   * Передается в двух случаях: при fetchMore и первом запросе с initialCursor.
+   */
+  cursor?: Partial<TResult>;
+  /**
+   * Направление запроса, присутствует только при использовании fetchMore
+   */
+  direction?: FetchMoreDirection;
 };
 
 export type InfiniteDataStorage<TResult> = DataStorage<{
   data: TResult[];
   offset: number;
   isEndReached: boolean;
+  isStartReached: boolean;
 }>;
 
 /**
@@ -24,7 +56,7 @@ export type InfiniteDataStorage<TResult> = DataStorage<{
  * что будет использоваться что-то возвращающее массив данных
  */
 export type InfiniteExecutor<TResult> = (
-  params: InfiniteParams,
+  params: InfiniteParams<TResult>,
 ) => Promise<TResult[]>;
 
 export type InfiniteQueryParams<
@@ -38,9 +70,18 @@ export type InfiniteQueryParams<
    */
   incrementCount?: number;
   /**
+   * Смещение, от которого требуется сделать первый запрос
+   * @default 0
+   */
+  initialOffset?: number;
+  /**
+   * Стартовый элемент, от которого требуется сделать первый запрос
+   */
+  initialCursor?: Partial<TResult>;
+  /**
    * Обработчик ошибки, вызываемый по умолчанию
    */
-  onError?: SyncParams<TResult, TError>['onError'];
+  onError?: SyncParams<TResult, TError>["onError"];
   /**
    * Флаг, отвечающий за автоматический запрос данных при обращении к полю data
    */
@@ -76,10 +117,10 @@ export type InfiniteQueryParams<
  * которые должны быть закешированы,
  */
 export class InfiniteQuery<
-    TResult,
-    TError = void,
-    TIsBackground extends boolean = false,
-  >
+  TResult,
+  TError = void,
+  TIsBackground extends boolean = false,
+>
   extends QueryContainer<
     TError,
     AuxiliaryQuery<TResult[], TError>,
@@ -100,7 +141,7 @@ export class InfiniteQuery<
   /**
    * Обработчик ошибки, вызываемый по умолчанию
    */
-  private defaultOnError?: SyncParams<TResult, TError>['onError'];
+  private defaultOnError?: SyncParams<TResult, TError>["onError"];
 
   /**
    * Флаг, отвечающий за автоматический запрос данных при обращении к полю data
@@ -117,10 +158,27 @@ export class InfiniteQuery<
    */
   private readonly submitValidity?: () => void;
 
+  /**
+   * Хранилище статусов для процесса дозапроса данных
+   */
+  private fetchMoreStatusStorage = new StatusStorage<TError>();
+
+  /**
+   * Стартовое смещение для первого запроса
+   */
+  private initialOffset = 0;
+
+  /**
+   * Стартовый курсор для первого запроса
+   */
+  private initialCursor?: Partial<TResult>;
+
   constructor(
     private readonly executor: InfiniteExecutor<TResult>,
     {
       incrementCount = DEFAULT_INFINITE_ITEMS_COUNT,
+      initialOffset = 0,
+      initialCursor,
       onError,
       enabledAutoFetch,
       fetchPolicy,
@@ -139,6 +197,8 @@ export class InfiniteQuery<
       ),
     );
 
+    this.initialOffset = initialOffset;
+    this.initialCursor = initialCursor;
     this.storage = dataStorage;
     this.incrementCount = incrementCount;
     this.defaultOnError = onError;
@@ -147,20 +207,21 @@ export class InfiniteQuery<
     this.submitValidity = submitValidity;
 
     makeObservable(this as ThisType<this>, {
+      fetchMoreStatus: computed,
       data: computed,
       computedData: computed,
-      infiniteExecutor: computed,
       forceUpdate: action,
       async: action,
       sync: action,
       fetchMore: action,
       submitSuccess: action,
       isEndReached: computed,
+      isStartReached: computed,
     });
   }
 
   private get isNetworkOnly() {
-    return this.defaultFetchPolicy === 'network-only';
+    return this.defaultFetchPolicy === "network-only";
   }
 
   /**
@@ -173,11 +234,20 @@ export class InfiniteQuery<
   /**
    * Обработчик успешного запроса, проверяет что мы достигли предела
    */
-  private submitSuccess = (result: TResult[], isEndReached: boolean) => {
+  private submitSuccess = (
+    result: TResult[],
+    isLimitReached: boolean,
+    isBackward = false,
+  ) => {
     this.storage.setData((current) => ({
       offset: current?.offset,
       data: result,
-      isEndReached,
+      isEndReached: isBackward
+        ? Boolean(current?.isEndReached)
+        : isLimitReached,
+      isStartReached: isBackward
+        ? isLimitReached
+        : Boolean(current?.isStartReached),
     }));
 
     this.submitValidity?.();
@@ -190,7 +260,14 @@ export class InfiniteQuery<
     return Boolean(this.storage.data?.isEndReached);
   }
 
-  private calcIsEndReachedByResult = (result: TResult[]) => {
+  /**
+   * Флаг того, что мы достигли самого начала запрашиваемых элементов
+   */
+  public get isStartReached() {
+    return Boolean(this.storage.data?.isStartReached);
+  }
+
+  private calcIsLimitReachedByResult = (result: TResult[]) => {
     // убеждаемся что результат запроса действительно массив,
     // и если количество элементов в ответе меньше,
     // чем запрашивалось, значит у бэка их больше нет,
@@ -212,7 +289,7 @@ export class InfiniteQuery<
   ) => {
     this.auxiliary.submitSuccess();
 
-    if (typeof param === 'function') {
+    if (typeof param === "function") {
       this.submitSuccess(
         (param as (data?: TResult[]) => TResult[])(this.storage.data?.data),
         this.isEndReached,
@@ -225,13 +302,19 @@ export class InfiniteQuery<
   /**
    * Метод для обогащения параметров текущими значениями для инфинити
    */
-  private get infiniteExecutor(): () => Promise<TResult[]> {
+  private makeInfiniteExecutor = (
+    offset: number,
+    cursor?: Partial<TResult>,
+    direction?: FetchMoreDirection,
+  ): (() => Promise<TResult[]>) => {
     return () =>
       this.executor({
-        offset: this.offset,
+        offset,
         count: this.incrementCount,
+        cursor,
+        direction,
       });
-  }
+  };
 
   /**
    * Метод для инвалидации данных
@@ -240,30 +323,65 @@ export class InfiniteQuery<
     this.auxiliary.invalidate();
   };
 
+  private setOffset = (offset: number) => {
+    this.storage.setData((current) => ({
+      offset,
+      data: current?.data,
+      isEndReached: Boolean(current?.isEndReached),
+      isStartReached: Boolean(current?.isStartReached),
+    }));
+  };
+
+  public get fetchMoreStatus() {
+    return this.fetchMoreStatusStorage.statuses;
+  }
+
   /**
    * Метод для запроса следующего набора данных
    */
-  public fetchMore = () => {
+  public fetchMore = (options?: InfiniteFetchMoreOptions<TResult>) => {
+    const { direction = "forward", onSuccess } = options ?? {};
+    const isBackward = direction === "backward";
+    const isLimitReached = isBackward ? this.isStartReached : this.isEndReached;
+
     // если мы еще не достигли предела
-    if (!this.isEndReached && this.storage.data) {
-      // прибавляем к офсету число запрашиваемых элементов
-      this.storage.setData((current) => ({
-        offset: (current?.offset ?? 0) + this.incrementCount,
-        data: current?.data,
-        isEndReached: Boolean(current?.isEndReached),
-      }));
+    if (!isLimitReached && this.storage.data) {
+      this.fetchMoreStatusStorage.setStartLoading();
+      const offsetBeforeExecute = this.offset;
+      const increment = (isBackward ? -1 : 1) * this.incrementCount;
+      const cursor = isBackward
+        ? this.data?.[0]
+        : this.data?.[this.data.length - 1];
+      // прибавляем к offset число запрашиваемых элементов
+      const requestedOffset = Math.max(offsetBeforeExecute + increment, 0);
+      this.setOffset(requestedOffset);
 
       // запускаем запрос с последними параметрами, и флагом необходимости инкремента
       this.auxiliary
-        .getUnifiedPromise(this.infiniteExecutor, (resData) => {
-          this.submitSuccess(
-            [...(this.storage.data?.data ?? []), ...resData],
-            this.calcIsEndReachedByResult(resData),
-          );
-        })
+        .getUnifiedPromise(
+          this.makeInfiniteExecutor(requestedOffset, cursor, direction),
+          (resData) => {
+            this.fetchMoreStatusStorage.setSuccess();
+            const currentData = this.storage.data?.data;
+            const result = isBackward
+              ? [...resData, ...(currentData ?? [])]
+              : [...(currentData ?? []), ...resData];
+
+            this.submitSuccess(
+              result,
+              this.calcIsLimitReachedByResult(resData),
+              isBackward,
+            );
+            onSuccess?.({ offset: requestedOffset, cursor: cursor as TResult });
+          },
+        )
         .catch((e: TError) => {
+          this.fetchMoreStatusStorage.setError(e);
+          // в случае ошибки, откатываем значение offset к состоянию до дозапроса
+          this.setOffset(offsetBeforeExecute);
           this.defaultOnError?.(e);
-        });
+        })
+        .finally(this.fetchMoreStatusStorage.setEndLoading);
     }
   };
 
@@ -292,16 +410,23 @@ export class InfiniteQuery<
     onError,
   } = {}) => {
     this.storage.setData((current) => ({
-      offset: 0,
+      offset: (this.isIdle && this.initialOffset) || 0,
       data: current?.data,
       isEndReached: false,
+      isStartReached: false,
     }));
 
     this.auxiliary
-      .getUnifiedPromise(this.infiniteExecutor, (resData) => {
-        onSuccess?.(resData);
-        this.submitSuccess(resData, this.calcIsEndReachedByResult(resData));
-      })
+      .getUnifiedPromise(
+        this.makeInfiniteExecutor(
+          this.offset,
+          this.isIdle ? this.initialCursor : undefined,
+        ),
+        (resData) => {
+          onSuccess?.(resData);
+          this.submitSuccess(resData, this.calcIsLimitReachedByResult(resData));
+        },
+      )
       .catch((e: TError) => {
         if (!this.background) {
           this.storage.cleanData();
@@ -327,13 +452,18 @@ export class InfiniteQuery<
     }
 
     this.storage.setData((current) => ({
-      offset: 0,
+      offset: (this.isIdle && this.initialOffset) || 0,
       data: current?.data,
       isEndReached: false,
+      isStartReached: false,
     }));
 
-    return this.auxiliary.getUnifiedPromise(this.infiniteExecutor, (data) =>
-      this.submitSuccess(data, this.calcIsEndReachedByResult(data)),
+    return this.auxiliary.getUnifiedPromise(
+      this.makeInfiniteExecutor(
+        this.offset,
+        this.isIdle ? this.initialCursor : undefined,
+      ),
+      (data) => this.submitSuccess(data, this.calcIsLimitReachedByResult(data)),
     );
   };
 

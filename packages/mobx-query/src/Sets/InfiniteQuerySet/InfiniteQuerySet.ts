@@ -1,12 +1,12 @@
-import { type DeepPartial } from 'utility-types';
+import { type DeepPartial } from "utility-types";
 
 import {
   type CreateInfiniteQueryParams,
   type MobxQuery,
-} from '../../MobxQuery';
-import { type InfiniteQuery } from '../../InfiniteQuery';
-import { type CacheKey } from '../../types';
-import { generateQuerySetBaseKey, generateQuerySetKeys } from '../utils';
+} from "../../MobxQuery";
+import { type InfiniteParams, type InfiniteQuery } from "../../InfiniteQuery";
+import { type CacheKey } from "../../types";
+import { generateQuerySetBaseKey, generateQuerySetKeys } from "../utils";
 
 export type InfiniteQuerySetConfig = {
   name?: string;
@@ -16,10 +16,7 @@ export type InfiniteQuerySetConfigurator<TParams extends any[], TResponse> = (
   ...params: TParams
 ) => {
   keys?: CacheKey[];
-  execute: (infiniteParams: {
-    offset: number;
-    count: number;
-  }) => Promise<TResponse[]>;
+  execute: (infiniteParams: InfiniteParams<TResponse>) => Promise<TResponse[]>;
 };
 
 /**
@@ -110,7 +107,7 @@ export class InfiniteQuerySet<
 
     const { keys } = this.configureQuery(...(params as TParams));
 
-    this._cache.invalidate(keys, 'chain-match');
+    this._cache.invalidate(keys, "chain-match");
   };
 
   private configureQuery = (...params: TParams) => {
@@ -135,10 +132,9 @@ export class InfiniteQuerySet<
     const { keys } = this.configureQuery(...(params as TParams));
 
     this._cache
-      .getExistsQueries<InfiniteQuery<TResponse, TDefaultError>>(
-        keys,
-        'chain-match',
-      )
+      .getExistsQueries<
+        InfiniteQuery<TResponse, TDefaultError>
+      >(keys, "chain-match")
       .forEach((query) => query.forceUpdate(update));
   };
 }

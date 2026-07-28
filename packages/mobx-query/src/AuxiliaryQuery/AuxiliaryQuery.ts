@@ -1,6 +1,6 @@
-import { action, makeObservable, observable, runInAction } from 'mobx';
+import { action, makeObservable, observable, runInAction } from "mobx";
 
-import { type StatusStorage } from '../StatusStorage';
+import { type StatusStorage } from "../StatusStorage";
 
 /**
  * Испольнитель запроса
@@ -41,12 +41,10 @@ export class AuxiliaryQuery<TResult, TError = void> {
       isIdle: observable,
       isInvalid: observable,
       submitSuccess: action,
-      setSuccess: action,
-      setError: action,
-      setLoading: action,
       submitError: action,
       startLoading: action,
       invalidate: action,
+      endLoading: action,
     });
   }
 
@@ -76,21 +74,10 @@ export class AuxiliaryQuery<TResult, TError = void> {
 
           throw e;
         })
-        .finally(() => {
-          this.unifiedPromise = undefined;
-
-          runInAction(() => {
-            this.statusStorage.isLoading = false;
-          });
-        });
+        .finally(this.endLoading);
     }
 
     return this.unifiedPromise as Promise<TResult>;
-  };
-
-  private setSuccess: SetStorage<TError> = (storage) => {
-    storage.isError = false;
-    storage.isSuccess = true;
   };
 
   private checkBackgroundAndSet = (setStorage: SetStorage<TError>) => {
@@ -105,28 +92,16 @@ export class AuxiliaryQuery<TResult, TError = void> {
    * Обработчик успешного ответа
    */
   public submitSuccess = () => {
-    this.checkBackgroundAndSet(this.setSuccess);
+    this.checkBackgroundAndSet((storage) => storage.setSuccess());
     this.isInvalid = false;
-  };
-
-  private setError = (storage: StatusStorage<TError>, error: TError) => {
-    storage.isSuccess = false;
-    storage.isError = true;
-    storage.error = error;
   };
 
   /**
    * Обработчик ошибки
    */
   public submitError = (error: TError) => {
-    this.checkBackgroundAndSet((storage) => this.setError(storage, error));
+    this.checkBackgroundAndSet((storage) => storage.setError(error));
     this.isInvalid = false;
-  };
-
-  private setLoading: SetStorage<TError> = (storage) => {
-    storage.isLoading = true;
-    storage.isError = false;
-    storage.isSuccess = false;
   };
 
   /**
@@ -134,7 +109,16 @@ export class AuxiliaryQuery<TResult, TError = void> {
    */
   public startLoading = () => {
     this.isIdle = false;
-    this.checkBackgroundAndSet(this.setLoading);
+    this.checkBackgroundAndSet((storage) => storage.setStartLoading());
+  };
+
+  private endLoading = () => {
+    this.unifiedPromise = undefined;
+    this.statusStorage.setEndLoading();
+
+    if (this.statusStorage.isSuccess) {
+      this.backgroundStatusStorage?.setEndLoading();
+    }
   };
 
   /**
