@@ -16,10 +16,16 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && node scripts/prepare-package.cjs",
+    "preview": "vite preview",
+    "lint:types": "tsc --noEmit -p tsconfig.app.json",
+    "release": "semantic-release"
   },
   "dependencies": {
     "@tinkerbells88/mobx-query": "workspace:*",

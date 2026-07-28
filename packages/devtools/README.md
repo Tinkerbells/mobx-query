@@ -1,13 +1,13 @@
-# @tinkerbells/mobx-query-devtools
+# @tinkerbells88/mobx-query-devtools
 
 Developer tools для визуализации и отладки MobX Query кеша.
 
 ## Установка
 
 ```bash
-npm install @tinkerbells/mobx-query-devtools --save-dev
+npm install -D @tinkerbells88/mobx-query-devtools
 # или
-pnpm add -D @tinkerbells/mobx-query-devtools
+pnpm add -D @tinkerbells88/mobx-query-devtools
 ```
 
 ## Использование
@@ -15,11 +15,11 @@ pnpm add -D @tinkerbells/mobx-query-devtools
 Монтируйте DevTools только в dev режиме:
 
 ```typescript
-import { MobxQuery } from '@tinkerbells/mobx-query';
-import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools';
+import { MobxQuery } from '@tinkerbells88/mobx-query';
+import { mountMobxQueryDevtools } from '@tinkerbells88/mobx-query-devtools';
 
 const cacheService = new MobxQuery({
-  enableAutoFetch: true,
+  enabledAutoFetch: true,
   fetchPolicy: 'cache-first'
 });
 
@@ -49,7 +49,7 @@ function mountMobxQueryDevtools(
 ```tsx
 import { useEffect } from 'react';
 import { cacheService } from './services/cache';
-import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools';
+import { mountMobxQueryDevtools } from '@tinkerbells88/mobx-query-devtools';
 
 function App() {
   useEffect(() => {
