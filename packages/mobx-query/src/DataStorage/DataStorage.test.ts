@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DataStorage, DataStorageFactory } from './DataStorage';
 
 describe('DataStorage', () => {
-  const createStorage = () => new DataStorage();
+  const createStorage = () => new DataStorage<string[]>();
 
   describe('При исходном состоянии', () => {
     it('Данных изначально нет', () => {

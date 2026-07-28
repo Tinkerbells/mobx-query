@@ -6,7 +6,10 @@ export type QueryContainerAuxiliary = {
   isIdle: boolean;
 };
 
-type Statuses<TError> = StatusStorage<TError>;
+type Statuses<TError> = Pick<
+  StatusStorage<TError>,
+  'error' | 'isError' | 'isLoading' | 'isSuccess'
+>;
 
 /**
  * Контейнер для бойлерплейт части,
@@ -16,8 +19,7 @@ export abstract class QueryContainer<
   TError,
   TAuxiliary extends QueryContainerAuxiliary,
   TIsBackground extends boolean,
-> implements Statuses<TError>
-{
+> implements Statuses<TError> {
   protected constructor(
     private readonly statusStorage: StatusStorage<TError>,
     private readonly backgroundStatusStorage: StatusStorage<TError> | null,
@@ -109,7 +111,7 @@ export abstract class QueryContainer<
       return null as never;
     }
 
-    return this.backgroundStatusStorage as TIsBackground extends true
+    return this.backgroundStatusStorage as unknown as TIsBackground extends true
       ? Statuses<TError>
       : null;
   }

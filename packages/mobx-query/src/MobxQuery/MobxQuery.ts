@@ -1,17 +1,18 @@
-import { AdaptableMap } from "../AdaptableMap";
-import { DataStorageFactory } from "../DataStorage";
+import { AdaptableMap } from '../AdaptableMap';
+import { type DataStorage, DataStorageFactory } from '../DataStorage';
 import {
+  type InfiniteDataStorage,
   type InfiniteExecutor,
   InfiniteQuery,
   type InfiniteQueryParams,
-} from "../InfiniteQuery";
+} from '../InfiniteQuery';
 import {
   Mutation,
   type MutationExecutor,
   type MutationParams,
-} from "../Mutation";
-import { PollingService } from "../PollingService";
-import { Query, type QueryExecutor, type QueryParams } from "../Query";
+} from '../Mutation';
+import { PollingService } from '../PollingService';
+import { Query, type QueryExecutor, type QueryParams } from '../Query';
 import {
   InfiniteQuerySet,
   type InfiniteQuerySetConfig,
@@ -20,12 +21,12 @@ import {
   QuerySet,
   type QuerySetConfig,
   type QuerySetConfigurator,
-} from "../Sets";
-import { type StatusStorage, StatusStorageFactory } from "../StatusStorage";
-import { SynchronizationService } from "../SynchronizationService";
-import type { CacheKey, FetchPolicy } from "../types";
+} from '../Sets';
+import { type StatusStorage, StatusStorageFactory } from '../StatusStorage';
+import { SynchronizationService } from '../SynchronizationService';
+import type { CacheKey, FetchPolicy } from '../types';
 
-import type { CachedQuery, KeyHash, Keys, UnknownCachedQuery } from "./types";
+import type { CachedQuery, KeyHash, Keys, UnknownCachedQuery } from './types';
 
 /**
  * Стандартный обработчик ошибки запроса,
@@ -77,7 +78,7 @@ export type CreateQueryParams<
   TIsBackground extends boolean,
 > = Omit<
   QueryParams<TResult, TError, TIsBackground>,
-  "dataStorage" | "statusStorage" | "backgroundStatusStorage" | "submitValidity"
+  'dataStorage' | 'statusStorage' | 'backgroundStatusStorage' | 'submitValidity'
 > & {
   /**
    * Режим фонового обновления
@@ -93,7 +94,7 @@ export type CreateInfiniteQueryParams<
   TIsBackground extends boolean,
 > = Omit<
   InfiniteQueryParams<TResult, TError, TIsBackground>,
-  "dataStorage" | "statusStorage" | "backgroundStatusStorage" | "submitValidity"
+  'dataStorage' | 'statusStorage' | 'backgroundStatusStorage' | 'submitValidity'
 > & {
   /**
    * Режим фонового обновления
@@ -113,7 +114,7 @@ export type CreateMutationParams<TResult, TError> = MutationParams<
  * @property 'partial-match' - Проверяет наличие хотя бы одной части ключа в кэше
  * @property 'chain-match' - Проверяет наличие полной связки ключей в кэше
  */
-export type InvalidateStrategy = "partial-match" | "chain-match";
+export type InvalidateStrategy = 'partial-match' | 'chain-match';
 
 type QueryType = typeof Query.name | typeof InfiniteQuery.name;
 
@@ -123,21 +124,21 @@ type QueryType = typeof Query.name | typeof InfiniteQuery.name;
 type FallbackAbleCreateParams<TResult, TError, TIsBackground extends boolean> =
   | Pick<
       CreateQueryParams<TResult, TError, TIsBackground>,
-      | "onError"
-      | "fetchPolicy"
-      | "enabledAutoFetch"
-      | "isBackground"
-      | "enabledSynchronization"
-      | "pollingTime"
+      | 'onError'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
+      | 'isBackground'
+      | 'enabledSynchronization'
+      | 'pollingTime'
     >
   | Pick<
       CreateInfiniteQueryParams<TResult, TError, TIsBackground>,
-      | "onError"
-      | "fetchPolicy"
-      | "enabledAutoFetch"
-      | "isBackground"
-      | "enabledSynchronization"
-      | "pollingTime"
+      | 'onError'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
+      | 'isBackground'
+      | 'enabledSynchronization'
+      | 'pollingTime'
     >;
 
 /**
@@ -150,23 +151,23 @@ type InternalCreateQueryParams<
 > =
   | Pick<
       QueryParams<TResult, TError, TIsBackground>,
-      | "dataStorage"
-      | "backgroundStatusStorage"
-      | "onError"
-      | "statusStorage"
-      | "submitValidity"
-      | "fetchPolicy"
-      | "enabledAutoFetch"
+      | 'dataStorage'
+      | 'backgroundStatusStorage'
+      | 'onError'
+      | 'statusStorage'
+      | 'submitValidity'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
     >
   | Pick<
       InfiniteQueryParams<TResult, TError, TIsBackground>,
-      | "dataStorage"
-      | "backgroundStatusStorage"
-      | "onError"
-      | "statusStorage"
-      | "submitValidity"
-      | "fetchPolicy"
-      | "enabledAutoFetch"
+      | 'dataStorage'
+      | 'backgroundStatusStorage'
+      | 'onError'
+      | 'statusStorage'
+      | 'submitValidity'
+      | 'fetchPolicy'
+      | 'enabledAutoFetch'
     >;
 
 /**
@@ -220,7 +221,7 @@ export class MobxQuery<TDefaultError = void> {
   constructor(
     {
       onError,
-      fetchPolicy = "cache-first",
+      fetchPolicy = 'cache-first',
       enabledAutoFetch = false,
       enabledSynchronization = false,
     }: MobxQueryParams = {},
@@ -263,7 +264,7 @@ export class MobxQuery<TDefaultError = void> {
   ) => {
     const serializedInvalidatedKeys = invalidatedKeys.map(this.serialize);
 
-    if (strategy === "chain-match") {
+    if (strategy === 'chain-match') {
       return serializedInvalidatedKeys.every((invalidatedKey) =>
         queryKeys.some(
           (queryKey) => invalidatedKey === this.serialize(queryKey),
@@ -291,7 +292,7 @@ export class MobxQuery<TDefaultError = void> {
    */
   public invalidate = (
     invalidatedKeys: CacheKey[],
-    strategy: InvalidateStrategy = "partial-match",
+    strategy: InvalidateStrategy = 'partial-match',
   ) => {
     this.getExistsKeyHashes(invalidatedKeys, strategy).forEach(({ keyHash }) =>
       this.invalidateByKeyHash(keyHash),
@@ -311,7 +312,7 @@ export class MobxQuery<TDefaultError = void> {
    */
   private getExistsKeyHashes = (
     keys: CacheKey[],
-    strategy: InvalidateStrategy = "partial-match",
+    strategy: InvalidateStrategy = 'partial-match',
   ) =>
     [...this.keys.keys()]
       .map((keyHash) => ({ keyHash, queryKeys: this.keys.get(keyHash) }))
@@ -327,7 +328,7 @@ export class MobxQuery<TDefaultError = void> {
    */
   public getExistsQueries = <TQuery = UnknownCachedQuery>(
     keys: CacheKey[],
-    strategy: InvalidateStrategy = "partial-match",
+    strategy: InvalidateStrategy = 'partial-match',
   ) =>
     this.getExistsKeyHashes(keys, strategy).reduce<Array<TQuery>>(
       (acc, { keyHash }) => {
@@ -426,7 +427,7 @@ export class MobxQuery<TDefaultError = void> {
       submitValidity: () =>
         this.submitValidity(
           keys,
-          fetchPolicy !== "network-only",
+          fetchPolicy !== 'network-only',
           createParams?.enabledSynchronization ??
             this.defaultEnabledSynchronization,
           createParams?.pollingTime,
@@ -466,7 +467,7 @@ export class MobxQuery<TDefaultError = void> {
     // Этот кейс крайне маловероятен, и будет проявляться только в дев режиме с включенным StrictMode,
     // поэтому мы пренебрегаем решением этой проблемы, в угоду упрощения.
     const date =
-      fetchPolicy === "network-only" ? new Date().setMilliseconds(0) : null;
+      fetchPolicy === 'network-only' ? new Date().setMilliseconds(0) : null;
     const queryKey = [
       ...rootKey,
       { fetchPolicy, date, isBackground, type, enabledAutoFetch },
@@ -514,7 +515,7 @@ export class MobxQuery<TDefaultError = void> {
         new Query(executor, {
           ...params,
           ...internalParams,
-          dataStorage: internalParams.dataStorage,
+          dataStorage: internalParams.dataStorage as DataStorage<TResult>,
         }),
       Query.name,
       params,
@@ -538,7 +539,8 @@ export class MobxQuery<TDefaultError = void> {
         new InfiniteQuery(executor, {
           ...params,
           ...internalParams,
-          dataStorage: internalParams.dataStorage,
+          dataStorage:
+            internalParams.dataStorage as InfiniteDataStorage<TResult>,
         }),
       InfiniteQuery.name,
       params,
@@ -574,8 +576,7 @@ export class MobxQuery<TDefaultError = void> {
    *
    * docQuery.data // { data: [id, count] }
    */
-  // biome-ignore lint/suspicious/noExplicitAny: any нужен для вывода типов
-  public createQuerySet = <TParams extends any[], TResponse>(
+  public createQuerySet = <TParams extends unknown[], TResponse>(
     configurator: QuerySetConfigurator<TParams, TResponse>,
     config?: QuerySetConfig,
   ) =>
@@ -595,8 +596,7 @@ export class MobxQuery<TDefaultError = void> {
    *
    * docListInfiniteQuery.data
    */
-  // biome-ignore lint/suspicious/noExplicitAny: any нужен для вывода типов
-  public createInfiniteQuerySet = <TParams extends any[], TResponse>(
+  public createInfiniteQuerySet = <TParams extends unknown[], TResponse>(
     configurator: InfiniteQuerySetConfigurator<TParams, TResponse>,
     config?: InfiniteQuerySetConfig,
   ) =>

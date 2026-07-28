@@ -4,7 +4,6 @@ const path = require('path');
 const INTERNAL_PACKAGES = ['@tinkerbells/mobx-query'];
 const OUT_DIR = path.resolve(__dirname, '..', 'lib');
 const PACKAGE_DIR = path.resolve(__dirname, '..');
-const REPO_ROOT = path.resolve(PACKAGE_DIR, '..');
 
 const readJSON = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
@@ -75,8 +74,8 @@ const run = () => {
     'utf8',
   );
 
-  copyFile(path.join(REPO_ROOT, 'LICENSE'), path.join(OUT_DIR, 'LICENSE'));
-  copyFile(path.join(REPO_ROOT, 'README.md'), path.join(OUT_DIR, 'README.md'));
+  copyFile(path.join(PACKAGE_DIR, 'LICENSE'), path.join(OUT_DIR, 'LICENSE'));
+  copyFile(path.join(PACKAGE_DIR, 'README.md'), path.join(OUT_DIR, 'README.md'));
 
   console.log(`prepare-package: generated lib package.json with version ${releaseTag}`);
 };

@@ -1,20 +1,21 @@
-import { type DeepPartial } from "utility-types";
+import { type DeepPartial } from 'utility-types';
 
 import {
   type CreateInfiniteQueryParams,
   type MobxQuery,
-} from "../../MobxQuery";
-import { type InfiniteParams, type InfiniteQuery } from "../../InfiniteQuery";
-import { type CacheKey } from "../../types";
-import { generateQuerySetBaseKey, generateQuerySetKeys } from "../utils";
+} from '../../MobxQuery';
+import { type InfiniteParams, type InfiniteQuery } from '../../InfiniteQuery';
+import { type CacheKey } from '../../types';
+import { generateQuerySetBaseKey, generateQuerySetKeys } from '../utils';
 
 export type InfiniteQuerySetConfig = {
   name?: string;
 };
 
-export type InfiniteQuerySetConfigurator<TParams extends any[], TResponse> = (
-  ...params: TParams
-) => {
+export type InfiniteQuerySetConfigurator<
+  TParams extends unknown[],
+  TResponse,
+> = (...params: TParams) => {
   keys?: CacheKey[];
   execute: (infiniteParams: InfiniteParams<TResponse>) => Promise<TResponse[]>;
 };
@@ -23,7 +24,7 @@ export type InfiniteQuerySetConfigurator<TParams extends any[], TResponse> = (
  * Набор infinite queries под одним ключем с целью повышения читаемости кода и удобства инвалидации по общему ключу
  */
 export class InfiniteQuerySet<
-  TParams extends any[],
+  TParams extends unknown[],
   TResponse,
   TDefaultError = unknown,
 > {
@@ -107,7 +108,7 @@ export class InfiniteQuerySet<
 
     const { keys } = this.configureQuery(...(params as TParams));
 
-    this._cache.invalidate(keys, "chain-match");
+    this._cache.invalidate(keys, 'chain-match');
   };
 
   private configureQuery = (...params: TParams) => {
@@ -134,7 +135,7 @@ export class InfiniteQuerySet<
     this._cache
       .getExistsQueries<
         InfiniteQuery<TResponse, TDefaultError>
-      >(keys, "chain-match")
+      >(keys, 'chain-match')
       .forEach((query) => query.forceUpdate(update));
   };
 }

@@ -56,10 +56,10 @@ export type QueryParams<
  * но им не требуется усложнение в виде работы с фильтрами и инфинити запросами
  */
 export class Query<
-    TResult,
-    TError = void,
-    TIsBackground extends boolean = false,
-  >
+  TResult,
+  TError = void,
+  TIsBackground extends boolean = false,
+>
   extends QueryContainer<TError, AuxiliaryQuery<TResult, TError>, TIsBackground>
   implements QueryBaseActions<TResult, TError, undefined>
 {

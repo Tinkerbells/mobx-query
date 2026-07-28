@@ -7,12 +7,20 @@ export const createDocumentMock = () => {
   const documentMock = mock<
     Pick<Document, 'addEventListener' | 'visibilityState'>
   >({
-    addEventListener: (_event, listener: () => void) =>
-      listeners.push(listener),
+    addEventListener: ((
+      _event: string,
+      listener: EventListenerOrEventListenerObject,
+    ) => {
+      if (typeof listener === 'function') {
+        listeners.push(() => listener(new Event('visibilitychange')));
+      }
+    }) as Document['addEventListener'],
     get visibilityState() {
       return isVisible ? 'visible' : 'hidden';
     },
-    set visibilityState(_value: Document['visibilityState']) {},
+    set visibilityState(_value: Document['visibilityState']) {
+      void _value;
+    },
   });
 
   const triggerVisibilityChange = () => {

@@ -1,6 +1,6 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable } from 'mobx';
 
-import { StorageFactory } from "../StorageFactory";
+import { StorageFactory } from '../StorageFactory';
 
 export class StatusStorage<TError> {
   constructor() {
@@ -77,6 +77,6 @@ export class StatusStorageFactory extends StorageFactory<StatusStorage<void>> {
   }
 
   public getStorage = <TError>(keyHash: string) => {
-    return this.getInternalStorage(keyHash) as StatusStorage<TError>;
+    return this.getInternalStorage(keyHash) as unknown as StatusStorage<TError>;
   };
 }

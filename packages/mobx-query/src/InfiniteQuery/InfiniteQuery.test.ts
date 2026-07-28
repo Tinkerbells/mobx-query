@@ -1,12 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
-import { when } from "mobx";
+import { describe, expect, it, vi } from 'vitest';
+import { when } from 'mobx';
 
-import { DataStorage } from "../DataStorage";
-import { StatusStorage } from "../StatusStorage";
+import { DataStorage } from '../DataStorage';
+import { StatusStorage } from '../StatusStorage';
 
-import { DEFAULT_INFINITE_ITEMS_COUNT, InfiniteQuery } from "./InfiniteQuery";
+import { DEFAULT_INFINITE_ITEMS_COUNT, InfiniteQuery } from './InfiniteQuery';
 
-describe("InfiniteQuery", () => {
+describe('InfiniteQuery', () => {
   const getDataStorage = <T = unknown>() =>
     new DataStorage<{
       data: T[];
@@ -16,39 +16,39 @@ describe("InfiniteQuery", () => {
     }>();
   const getStatusStorage = () => new StatusStorage();
 
-  describe("При начальном состоянии", () => {
-    const query = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+  describe('При начальном состоянии', () => {
+    const query = new InfiniteQuery(() => Promise.resolve(['foo']), {
       dataStorage: getDataStorage(),
       statusStorage: getStatusStorage(),
     });
 
-    it("Флаг загрузки false", () => {
+    it('Флаг загрузки false', () => {
       expect(query.isLoading).toBeFalsy();
     });
 
-    it("Флаг ошибки false", () => {
+    it('Флаг ошибки false', () => {
       expect(query.isError).toBeFalsy();
     });
 
-    it("Флаг успеха false", () => {
+    it('Флаг успеха false', () => {
       expect(query.isSuccess).toBeFalsy();
     });
 
-    it("Флаг простаивания true", () => {
+    it('Флаг простаивания true', () => {
       expect(query.isIdle).toBeTruthy();
     });
 
-    it("Значение data undefined", () => {
+    it('Значение data undefined', () => {
       expect(query.data).toBeUndefined();
     });
 
-    it("Данные ошибки undefined", () => {
+    it('Данные ошибки undefined', () => {
       expect(query.error).toBeUndefined();
     });
   });
 
-  it("Флаг простаивания false сразу после запуска запроса", () => {
-    const query = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+  it('Флаг простаивания false сразу после запуска запроса', () => {
+    const query = new InfiniteQuery(() => Promise.resolve(['foo']), {
       dataStorage: getDataStorage(),
       statusStorage: getStatusStorage(),
     });
@@ -57,31 +57,31 @@ describe("InfiniteQuery", () => {
     expect(query.isIdle).toBeFalsy();
   });
 
-  describe("При успешной загрузке", () => {
+  describe('При успешной загрузке', () => {
     const createQuery = () =>
-      new InfiniteQuery(() => Promise.resolve(["foo"]), {
+      new InfiniteQuery(() => Promise.resolve(['foo']), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
       });
 
-    it("Данные ответа попадают в data", async () => {
+    it('Данные ответа попадают в data', async () => {
       const query = createQuery();
 
       query.sync();
       await when(() => !query.isLoading);
-      expect(query.data).toStrictEqual(["foo"]);
+      expect(query.data).toStrictEqual(['foo']);
     });
 
-    it("onSuccess вызывается", async () => {
+    it('onSuccess вызывается', async () => {
       const onSuccess = vi.fn();
       const query = createQuery();
 
       query.sync({ onSuccess });
       await when(() => !query.isLoading);
-      expect(onSuccess).toBeCalledWith(["foo"]);
+      expect(onSuccess).toBeCalledWith(['foo']);
     });
 
-    it("Флаги состояний устанавливаются в соответствующее состояние", async () => {
+    it('Флаги состояний устанавливаются в соответствующее состояние', async () => {
       const query = createQuery();
 
       await query.async();
@@ -89,9 +89,9 @@ describe("InfiniteQuery", () => {
       expect(query.isError).toBeFalsy();
     });
 
-    it("Квери вызывает переданный submitValidity при успешном запросе", async () => {
+    it('Квери вызывает переданный submitValidity при успешном запросе', async () => {
       const submitSpy = vi.fn();
-      const query = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+      const query = new InfiniteQuery(() => Promise.resolve(['foo']), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
         submitValidity: submitSpy,
@@ -102,9 +102,9 @@ describe("InfiniteQuery", () => {
     });
   });
 
-  describe("При провальном запросе", () => {
-    it("Флаг ошибки устанавливается", async () => {
-      const query = new InfiniteQuery(() => Promise.reject("error"), {
+  describe('При провальном запросе', () => {
+    it('Флаг ошибки устанавливается', async () => {
+      const query = new InfiniteQuery(() => Promise.reject('error'), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
       });
@@ -115,8 +115,8 @@ describe("InfiniteQuery", () => {
       expect(query.isError).toBeTruthy();
     });
 
-    it("Значение ошибки попадает в поле error", async () => {
-      const query = new InfiniteQuery(() => Promise.reject("error"), {
+    it('Значение ошибки попадает в поле error', async () => {
+      const query = new InfiniteQuery(() => Promise.reject('error'), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
       });
@@ -124,12 +124,12 @@ describe("InfiniteQuery", () => {
       query.sync();
       await when(() => !query.isLoading);
       await when(() => query.error !== undefined);
-      expect(query.error).toBe("error");
+      expect(query.error).toBe('error');
     });
 
-    it("Обработчик ошибки вызывается", async () => {
+    it('Обработчик ошибки вызывается', async () => {
       const onError = vi.fn();
-      const query = new InfiniteQuery(() => Promise.reject("error"), {
+      const query = new InfiniteQuery(() => Promise.reject('error'), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
       });
@@ -137,12 +137,12 @@ describe("InfiniteQuery", () => {
       query.sync({ onError });
       await when(() => !query.isLoading);
       await when(() => query.error !== undefined);
-      expect(onError).toBeCalledWith("error");
+      expect(onError).toBeCalledWith('error');
     });
 
-    it("Обработчик ошибки по умолчанию вызывается", async () => {
+    it('Обработчик ошибки по умолчанию вызывается', async () => {
       const onDefaultError = vi.fn();
-      const query = new InfiniteQuery(() => Promise.reject("error"), {
+      const query = new InfiniteQuery(() => Promise.reject('error'), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
         onError: onDefaultError,
@@ -151,12 +151,12 @@ describe("InfiniteQuery", () => {
       query.sync();
       await when(() => !query.isLoading);
       await when(() => query.error !== undefined);
-      expect(onDefaultError).toBeCalledWith("error");
+      expect(onDefaultError).toBeCalledWith('error');
     });
 
-    it("Обработчик ошибки по умолчанию не вызывается при использовании async", async () => {
+    it('Обработчик ошибки по умолчанию не вызывается при использовании async', async () => {
       const onDefaultError = vi.fn();
-      const query = new InfiniteQuery(() => Promise.reject("foo"), {
+      const query = new InfiniteQuery(() => Promise.reject('foo'), {
         onError: onDefaultError,
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
@@ -165,14 +165,14 @@ describe("InfiniteQuery", () => {
       await query.async().catch((e) => e);
       await when(() => !query.isLoading);
       await when(() => query.error !== undefined);
-      expect(query.error).toBe("foo");
+      expect(query.error).toBe('foo');
       expect(onDefaultError).not.toBeCalled();
     });
 
-    it("Обработчик по умолчанию не вызывается, если в sync передан кастомный", async () => {
+    it('Обработчик по умолчанию не вызывается, если в sync передан кастомный', async () => {
       const onError = vi.fn();
       const onDefaultError = vi.fn();
-      const query = new InfiniteQuery(() => Promise.reject("error"), {
+      const query = new InfiniteQuery(() => Promise.reject('error'), {
         dataStorage: getDataStorage(),
         onError: onDefaultError,
         statusStorage: getStatusStorage(),
@@ -181,12 +181,12 @@ describe("InfiniteQuery", () => {
       query.sync({ onError });
       await when(() => !query.isLoading);
       await when(() => query.error !== undefined);
-      expect(onDefaultError).not.toBeCalledWith("error");
+      expect(onDefaultError).not.toBeCalledWith('error');
     });
   });
 
-  describe("При инвалидации", () => {
-    it("sync запускает загрузку после invalidate", async () => {
+  describe('При инвалидации', () => {
+    it('sync запускает загрузку после invalidate', async () => {
       const query = new InfiniteQuery(
         // executor эмулирует постоянно меняющиеся данные
         () => Promise.resolve([Math.random()]),
@@ -211,7 +211,7 @@ describe("InfiniteQuery", () => {
       expect(secondValue !== firstValue).toBeTruthy();
     });
 
-    it("async запускает загрузку после invalidate", async () => {
+    it('async запускает загрузку после invalidate', async () => {
       const query = new InfiniteQuery(
         // executor эмулирует постоянно меняющиеся данные
         () => Promise.resolve([Math.random()]),
@@ -233,7 +233,7 @@ describe("InfiniteQuery", () => {
       expect(secondValue !== firstValue).toBeTruthy();
     });
 
-    it("Обращение к data запускает загрузку после invalidate, если enabledAutoFetch включен", async () => {
+    it('Обращение к data запускает загрузку после invalidate, если enabledAutoFetch включен', async () => {
       const query = new InfiniteQuery(
         // executor эмулирует постоянно меняющиеся данные
         () => Promise.resolve([Math.random()]),
@@ -261,13 +261,13 @@ describe("InfiniteQuery", () => {
       expect(secondValue !== firstValue).toBeTruthy();
     });
 
-    it("Обращение к данным при одновременном вызове fetchMore вызывает только одно исполнение executor", async () => {
+    it('Обращение к данным при одновременном вызове fetchMore вызывает только одно исполнение executor', async () => {
       const executorSpy = vi.fn();
       const query = new InfiniteQuery(
         () => {
           executorSpy();
 
-          return Promise.resolve(["foo"]);
+          return Promise.resolve(['foo']);
         },
         {
           dataStorage: getDataStorage(),
@@ -288,9 +288,9 @@ describe("InfiniteQuery", () => {
     });
   });
 
-  describe("При включенном enabledAutoFetch", () => {
-    it("Автоматический запрос данных при обращении к data", async () => {
-      const query = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+  describe('При включенном enabledAutoFetch', () => {
+    it('Автоматический запрос данных при обращении к data', async () => {
+      const query = new InfiniteQuery(() => Promise.resolve(['foo']), {
         enabledAutoFetch: true,
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
@@ -301,13 +301,13 @@ describe("InfiniteQuery", () => {
       expect(query.isLoading).toBeTruthy();
     });
 
-    it("Повторные обращения к data не запускают повторных запросов, при фейле запроса", async () => {
+    it('Повторные обращения к data не запускают повторных запросов, при фейле запроса', async () => {
       const insideExecutor = vi.fn();
       const query = new InfiniteQuery(
         () => {
           insideExecutor();
 
-          return Promise.reject("foo");
+          return Promise.reject('foo');
         },
         {
           enabledAutoFetch: true,
@@ -326,7 +326,7 @@ describe("InfiniteQuery", () => {
     });
   });
 
-  describe("При использовании infinite специфик", () => {
+  describe('При использовании infinite специфик', () => {
     const createQuery = () => {
       const insideExecutor = vi.fn();
 
@@ -337,7 +337,7 @@ describe("InfiniteQuery", () => {
           // эмулируем ситуацию, что у нас на бэке есть данные для первых двух страниц,
           // на каждой странице всего по 1му элементу
           if (params.offset <= 1) {
-            return Promise.resolve(["foo"]);
+            return Promise.resolve(['foo']);
           }
 
           // если запросили больше чем 2ю страницу, отдаем пустотой массив
@@ -353,37 +353,40 @@ describe("InfiniteQuery", () => {
       return { query, insideExecutor };
     };
 
-    it("Данные конкатенируются", async () => {
+    it('Данные конкатенируются', async () => {
       const { query } = createQuery();
 
       await query.async();
       // запускаем fetchMore метод
       query.fetchMore();
       await when(() => !query.isLoading);
-      expect(query.data).toStrictEqual(["foo", "foo"]);
+      expect(query.data).toStrictEqual(['foo', 'foo']);
     });
 
-    it("executor вызывается со счетчиками соответствующими количеству вызова fetchMore + первый sync/async", async () => {
+    it('executor вызывается со счетчиками соответствующими количеству вызова fetchMore + первый sync/async', async () => {
       const { query, insideExecutor } = createQuery();
 
       await query.async();
+
       expect(insideExecutor).toHaveBeenLastCalledWith({
         offset: 0,
         count: 1,
         cursor: undefined,
         direction: undefined,
       });
+
       query.fetchMore();
       await when(() => !query.isLoading);
+
       expect(insideExecutor).toHaveBeenLastCalledWith({
         offset: 1,
         count: 1,
-        cursor: "foo",
-        direction: "forward",
+        cursor: 'foo',
+        direction: 'forward',
       });
     });
 
-    it("Флаг достижения окончания списка актуализируется в зависимости от ответа", async () => {
+    it('Флаг достижения окончания списка актуализируется в зависимости от ответа', async () => {
       const { query } = createQuery();
 
       await query.async();
@@ -397,7 +400,7 @@ describe("InfiniteQuery", () => {
       expect(query.isEndReached).toBeTruthy();
     });
 
-    it("Последующие вызовы fetchMore игнорируются, при достижении окончания списка", async () => {
+    it('Последующие вызовы fetchMore игнорируются, при достижении окончания списка', async () => {
       const { query, insideExecutor } = createQuery();
 
       await query.async();
@@ -411,7 +414,7 @@ describe("InfiniteQuery", () => {
       expect(insideExecutor).toBeCalledTimes(3);
     });
 
-    it("Флаг окончания списка сбрасывается в соответствии с ответом от бэка, по достижению окончанию списка и последующей инвалидации", async () => {
+    it('Флаг окончания списка сбрасывается в соответствии с ответом от бэка, по достижению окончанию списка и последующей инвалидации', async () => {
       const { query } = createQuery();
 
       await query.async();
@@ -425,7 +428,7 @@ describe("InfiniteQuery", () => {
       expect(query.isEndReached).toBeFalsy();
     });
 
-    it("Вызов sync/async приведет к вызову executor c начальными счетчиками, после вызова инвалидации", async () => {
+    it('Вызов sync/async приведет к вызову executor c начальными счетчиками, после вызова инвалидации', async () => {
       const { query, insideExecutor } = createQuery();
 
       await query.async();
@@ -437,10 +440,10 @@ describe("InfiniteQuery", () => {
       expect(insideExecutor).toBeCalledWith({ offset: 0, count: 1 });
     });
 
-    it("isEndReached сбрасывается при каждом ручном запросе", async () => {
+    it('isEndReached сбрасывается при каждом ручном запросе', async () => {
       const query = new InfiniteQuery(
         // предположим что у бэка есть только 1 элемент, хотя мы запрашиваем 2
-        () => Promise.resolve(["foo"]),
+        () => Promise.resolve(['foo']),
         {
           incrementCount: 2,
           dataStorage: getDataStorage(),
@@ -456,34 +459,34 @@ describe("InfiniteQuery", () => {
     });
   });
 
-  it("Данные синхронизируются при использовании одного dataStorage", async () => {
+  it('Данные синхронизируются при использовании одного dataStorage', async () => {
     const unifiedDataStorage = getDataStorage();
     const unifiedStatusStorage = getStatusStorage();
 
-    const queryA = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+    const queryA = new InfiniteQuery(() => Promise.resolve(['foo']), {
       dataStorage: unifiedDataStorage,
       statusStorage: unifiedStatusStorage,
     });
 
-    const queryB = new InfiniteQuery(() => Promise.resolve(["bar"]), {
+    const queryB = new InfiniteQuery(() => Promise.resolve(['bar']), {
       dataStorage: unifiedDataStorage,
       statusStorage: unifiedStatusStorage,
     });
 
     await queryA.async();
-    expect(queryB.data).toStrictEqual(["foo"]);
+    expect(queryB.data).toStrictEqual(['foo']);
   });
 
-  it("Статусы синхронизируются при использовании одного statusStorage", async () => {
+  it('Статусы синхронизируются при использовании одного statusStorage', async () => {
     const unifiedDataStorage = getDataStorage();
     const unifiedStatusStorage = getStatusStorage();
 
-    const queryA = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+    const queryA = new InfiniteQuery(() => Promise.resolve(['foo']), {
       dataStorage: unifiedDataStorage,
       statusStorage: unifiedStatusStorage,
     });
 
-    const queryB = new InfiniteQuery(() => Promise.resolve(["bar"]), {
+    const queryB = new InfiniteQuery(() => Promise.resolve(['bar']), {
       dataStorage: unifiedDataStorage,
       statusStorage: unifiedStatusStorage,
     });
@@ -492,16 +495,16 @@ describe("InfiniteQuery", () => {
     expect(queryB.isSuccess).toBeTruthy();
   });
 
-  it("Статусы не синхронизируются при использовании разных statusStorage", async () => {
+  it('Статусы не синхронизируются при использовании разных statusStorage', async () => {
     const unifiedDataStorage = getDataStorage();
 
-    const queryA = new InfiniteQuery(() => Promise.resolve(["foo"]), {
+    const queryA = new InfiniteQuery(() => Promise.resolve(['foo']), {
       dataStorage: unifiedDataStorage,
       statusStorage: getStatusStorage(),
       backgroundStatusStorage: null,
     });
 
-    const queryB = new InfiniteQuery(() => Promise.resolve(["bar"]), {
+    const queryB = new InfiniteQuery(() => Promise.resolve(['bar']), {
       dataStorage: unifiedDataStorage,
       statusStorage: getStatusStorage(),
       backgroundStatusStorage: null,
@@ -511,71 +514,71 @@ describe("InfiniteQuery", () => {
     expect(queryB.isSuccess).toBeFalsy();
   });
 
-  describe("При использовании backgroundStatusStorage", () => {
+  describe('При использовании backgroundStatusStorage', () => {
     const buildQuery = () =>
-      new InfiniteQuery<string, unknown, true>(() => Promise.resolve(["foo"]), {
+      new InfiniteQuery<string, unknown, true>(() => Promise.resolve(['foo']), {
         dataStorage: getDataStorage(),
         statusStorage: getStatusStorage(),
         backgroundStatusStorage: getStatusStorage(),
       });
 
-    it("Статус isSuccess == true при успешном первом запросе", async () => {
+    it('Статус isSuccess == true при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.isSuccess).toBeTruthy();
     });
 
-    it("Статус isError == false при успешном первом запросе", async () => {
+    it('Статус isError == false при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.isError).toBeFalsy();
     });
 
-    it("Статус error == undefined при успешном первом запросе", async () => {
+    it('Статус error == undefined при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.error).toBeUndefined();
     });
 
-    it("Статус isLoading == true при запуске первого запроса", async () => {
+    it('Статус isLoading == true при запуске первого запроса', async () => {
       const query = buildQuery();
 
       query.async();
       expect(query.isLoading).toBeTruthy();
     });
 
-    it("Статус backrgoundStatus.isSuccess == false при успешном первом запросе", async () => {
+    it('Статус backrgoundStatus.isSuccess == false при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.background.isSuccess).toBeFalsy();
     });
 
-    it("Статус backrgoundStatus.isError == false при успешном первом запросе", async () => {
+    it('Статус backrgoundStatus.isError == false при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.background.isError).toBeFalsy();
     });
 
-    it("Статус backrgoundStatus.isLoading == false при старте первого запроса", async () => {
+    it('Статус backrgoundStatus.isLoading == false при старте первого запроса', async () => {
       const query = buildQuery();
 
       query.async();
       expect(query.background.isLoading).toBeFalsy();
     });
 
-    it("Статус backrgoundStatus.error == undefined при успешном первом запросе", async () => {
+    it('Статус backrgoundStatus.error == undefined при успешном первом запросе', async () => {
       const query = buildQuery();
 
       await query.async();
       expect(query.background.error).toBeUndefined();
     });
 
-    it("Статус isLoading не изменяется при повторных запросах", async () => {
+    it('Статус isLoading не изменяется при повторных запросах', async () => {
       const query = buildQuery();
 
       await query.async();
@@ -584,7 +587,7 @@ describe("InfiniteQuery", () => {
       expect(query.isLoading).toBeFalsy();
     });
 
-    it("Статус backrgoundStatus.isLoading изменяется при повторных запросах", async () => {
+    it('Статус backrgoundStatus.isLoading изменяется при повторных запросах', async () => {
       const query = buildQuery();
 
       await query.async();
@@ -593,7 +596,7 @@ describe("InfiniteQuery", () => {
       expect(query.background.isLoading).toBeTruthy();
     });
 
-    it("Статус backrgoundStatus.isSuccess == true при повторном успешном запросе", async () => {
+    it('Статус backrgoundStatus.isSuccess == true при повторном успешном запросе', async () => {
       const query = buildQuery();
 
       await query.async();
@@ -610,10 +613,10 @@ describe("InfiniteQuery", () => {
           count++;
 
           if (count <= 1) {
-            return Promise.resolve(["foo"]);
+            return Promise.resolve(['foo']);
           }
 
-          return Promise.reject("bar");
+          return Promise.reject('bar');
         },
         {
           dataStorage: getDataStorage(),
@@ -623,7 +626,7 @@ describe("InfiniteQuery", () => {
       );
     };
 
-    it("Статус isSuccess == true при первом успешном и последующих провальных запросах", async () => {
+    it('Статус isSuccess == true при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
@@ -632,7 +635,7 @@ describe("InfiniteQuery", () => {
       expect(query.isSuccess).toBeTruthy();
     });
 
-    it("Статус isError == false при первом успешном и последующих провальных запросах", async () => {
+    it('Статус isError == false при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
@@ -641,7 +644,7 @@ describe("InfiniteQuery", () => {
       expect(query.isError).toBeFalsy();
     });
 
-    it("Статус error == undefined при первом успешном и последующих провальных запросах", async () => {
+    it('Статус error == undefined при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
@@ -650,7 +653,7 @@ describe("InfiniteQuery", () => {
       expect(query.error).toBeUndefined();
     });
 
-    it("Статус background.isSuccess == false при первом успешном и последующих провальных запросах", async () => {
+    it('Статус background.isSuccess == false при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
@@ -659,7 +662,7 @@ describe("InfiniteQuery", () => {
       expect(query.background.isSuccess).toBeFalsy();
     });
 
-    it("Статус background.isError == true при первом успешном и последующих провальных запросах", async () => {
+    it('Статус background.isError == true при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
@@ -668,17 +671,17 @@ describe("InfiniteQuery", () => {
       expect(query.background.isError).toBeTruthy();
     });
 
-    it("Статус background.error содержит ошибку при первом успешном и последующих провальных запросах", async () => {
+    it('Статус background.error содержит ошибку при первом успешном и последующих провальных запросах', async () => {
       const query = buildSuccessAndFailQuery();
 
       await query.async();
       query.invalidate();
       await query.async().catch(() => {});
-      expect(query.background.error).toBe("bar");
+      expect(query.background.error).toBe('bar');
     });
   });
 
-  describe("При политике network-only", () => {
+  describe('При политике network-only', () => {
     const createQuery = () => {
       // счетчик для эмуляции меняющихся данных
       let counter = 0;
@@ -692,12 +695,12 @@ describe("InfiniteQuery", () => {
         {
           dataStorage: getDataStorage(),
           statusStorage: getStatusStorage(),
-          fetchPolicy: "network-only",
+          fetchPolicy: 'network-only',
         },
       );
     };
 
-    it("Данные запрашиваются при каждом вызове async", async () => {
+    it('Данные запрашиваются при каждом вызове async', async () => {
       const query = createQuery();
 
       await query.async();
@@ -709,7 +712,7 @@ describe("InfiniteQuery", () => {
       expect(query.data).toStrictEqual([2]);
     });
 
-    it("Данные запрашиваются при каждом вызове sync", async () => {
+    it('Данные запрашиваются при каждом вызове sync', async () => {
       const query = createQuery();
 
       query.sync();
@@ -725,14 +728,14 @@ describe("InfiniteQuery", () => {
     });
   });
 
-  describe("При использование forceUpdate", () => {
+  describe('При использование forceUpdate', () => {
     const createQuery = () => {
       const onInsideExecutor = vi.fn();
       const query = new InfiniteQuery(
         () => {
           onInsideExecutor();
 
-          return Promise.resolve(["foo"]);
+          return Promise.resolve(['foo']);
         },
         {
           dataStorage: getDataStorage(),
@@ -743,39 +746,39 @@ describe("InfiniteQuery", () => {
       return { query, onInsideExecutor };
     };
 
-    it("Данные устанавливаются снаружи", () => {
+    it('Данные устанавливаются снаружи', () => {
       const { query } = createQuery();
 
-      query.forceUpdate(["foo"]);
-      expect(query.data).toStrictEqual(["foo"]);
+      query.forceUpdate(['foo']);
+      expect(query.data).toStrictEqual(['foo']);
     });
 
-    it("Запрос не происходит", () => {
+    it('Запрос не происходит', () => {
       const { query, onInsideExecutor } = createQuery();
 
-      query.forceUpdate(["foo"]);
+      query.forceUpdate(['foo']);
       expect(onInsideExecutor).not.toBeCalled();
     });
 
-    it("Все статусные флаги устанавливаются в значение соответствующее успешному запросу", () => {
+    it('Все статусные флаги устанавливаются в значение соответствующее успешному запросу', () => {
       const { query } = createQuery();
 
-      query.forceUpdate(["foo"]);
+      query.forceUpdate(['foo']);
       expect(query.isSuccess).toBeTruthy();
       expect(query.isError).toBeFalsy();
     });
 
-    it("Данные можно обновлять функцией", () => {
+    it('Данные можно обновлять функцией', () => {
       const { query } = createQuery();
 
-      query.forceUpdate(["foo"]);
-      query.forceUpdate((current) => [...(current ?? []), "bar"]);
-      expect(query.data).toStrictEqual(["foo", "bar"]);
+      query.forceUpdate(['foo']);
+      query.forceUpdate((current) => [...(current ?? []), 'bar']);
+      expect(query.data).toStrictEqual(['foo', 'bar']);
     });
   });
 
-  describe("При курсорной и двунаправленной пагинации", () => {
-    it("Использует initialOffset и initialCursor только для первого запроса", async () => {
+  describe('При курсорной и двунаправленной пагинации', () => {
+    it('Использует initialOffset и initialCursor только для первого запроса', async () => {
       const executor = vi.fn(() => Promise.resolve([{ id: 1 }]));
       const query = new InfiniteQuery(executor, {
         initialOffset: 20,
@@ -794,9 +797,9 @@ describe("InfiniteQuery", () => {
       });
     });
 
-    it("Добавляет данные перед текущей страницей при backward fetchMore", async () => {
+    it('Добавляет данные перед текущей страницей при backward fetchMore', async () => {
       const executor = vi.fn(({ direction }) =>
-        Promise.resolve(direction === "backward" ? [-1] : [0]),
+        Promise.resolve(direction === 'backward' ? [-1] : [0]),
       );
       const query = new InfiniteQuery(executor, {
         incrementCount: 1,
@@ -805,25 +808,25 @@ describe("InfiniteQuery", () => {
       });
 
       await query.async();
-      query.fetchMore({ direction: "backward" });
+      query.fetchMore({ direction: 'backward' });
       await when(() => !query.fetchMoreStatus.isLoading);
-
       expect(query.data).toStrictEqual([-1, 0]);
       expect(query.isStartReached).toBeFalsy();
+
       expect(executor).toHaveBeenLastCalledWith({
         offset: 0,
         count: 1,
         cursor: 0,
-        direction: "backward",
+        direction: 'backward',
       });
     });
 
-    it("Показывает ошибку и восстанавливает offset после неудачного fetchMore", async () => {
+    it('Показывает ошибку и восстанавливает offset после неудачного fetchMore', async () => {
       let shouldFail = false;
       const query = new InfiniteQuery(
         () =>
           shouldFail
-            ? Promise.reject("fetch-more-error")
+            ? Promise.reject('fetch-more-error')
             : Promise.resolve([0]),
         {
           incrementCount: 1,
@@ -839,8 +842,9 @@ describe("InfiniteQuery", () => {
 
       expect(query.fetchMoreStatus).toMatchObject({
         isError: true,
-        error: "fetch-more-error",
+        error: 'fetch-more-error',
       });
+
       expect(query.data).toStrictEqual([0]);
     });
   });

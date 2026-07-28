@@ -1,6 +1,6 @@
-import { action, makeObservable, observable, runInAction } from "mobx";
+import { action, makeObservable, observable, runInAction } from 'mobx';
 
-import { type StatusStorage } from "../StatusStorage";
+import { type StatusStorage } from '../StatusStorage';
 
 /**
  * Испольнитель запроса

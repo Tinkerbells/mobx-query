@@ -1,5 +1,5 @@
 import { type MobxQuery } from '../../MobxQuery';
-import { type Mutation, type MutationExecutor } from '../../Mutation';
+import { type MutationExecutor } from '../../Mutation';
 
 /**
  * Налор мутаций. Цель: единый интерфейс создания и использования наборов Query и Mutation

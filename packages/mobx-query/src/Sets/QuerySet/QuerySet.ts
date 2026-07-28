@@ -9,7 +9,7 @@ export type QuerySetConfig = {
   name?: string;
 };
 
-export type QuerySetConfigurator<TParams extends any[], TResponse> = (
+export type QuerySetConfigurator<TParams extends unknown[], TResponse> = (
   ...params: TParams
 ) => {
   keys?: CacheKey[];
@@ -20,7 +20,7 @@ export type QuerySetConfigurator<TParams extends any[], TResponse> = (
  * Набор queries под одним ключем с целью повышения читаемости кода и удобства инвалидации по общему ключу
  */
 export class QuerySet<
-  TParams extends any[],
+  TParams extends unknown[],
   TResponse,
   TDefaultError = unknown,
 > {
