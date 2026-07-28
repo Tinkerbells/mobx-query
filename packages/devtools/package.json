@@ -22,7 +22,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tinkerbells/mobx-query": "workspace:*",
+    "@tinkerbells88/mobx-query": "workspace:*",
     "mobx": "^6.13.6",
     "mobx-vue-lite": "^0.4.3",
     "vue": "^3.5.24"

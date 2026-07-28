@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import { MobxQuery } from '@tinkerbells/mobx-query';
+import { MobxQuery } from '@tinkerbells88/mobx-query';
 
 import App from './App.vue';
 import { mountMobxQueryDevtools } from './index';

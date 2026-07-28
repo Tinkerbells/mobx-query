@@ -16,7 +16,7 @@ const handleIdInput = (event: Event) => {
     <section class="demo">
       <header class="demo__header">
         <div>
-          <p class="demo__eyebrow">Пример использования @tinkerbells/mobx-query</p>
+          <p class="demo__eyebrow">Пример использования @tinkerbells88/mobx-query</p>
           <h1>Запрос одного todo с кешем</h1>
           <p class="demo__lead">
             При первом обращении к данным с выбранным id MobxQuery выполнит запрос и положит ответ в кеш.

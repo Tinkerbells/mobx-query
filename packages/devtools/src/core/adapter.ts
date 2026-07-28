@@ -1,4 +1,4 @@
-import type { MobxQuery } from '@tinkerbells/mobx-query';
+import type { MobxQuery } from '@tinkerbells88/mobx-query';
 
 export type QuerySnapshot = {
   hash: string;

@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import type { MobxQuery } from '@tinkerbells/mobx-query';
+import type { MobxQuery } from '@tinkerbells88/mobx-query';
 
 import { DevToolsAdapter } from './core/adapter';
 import { DevToolsStore } from './core/store';

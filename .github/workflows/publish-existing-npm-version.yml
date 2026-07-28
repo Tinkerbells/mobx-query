@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: v${{ inputs.version }}
+          ref: main
       - uses: pnpm/action-setup@v4
         with:
           version: 10.23.0
@@ -27,7 +27,7 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: RELEASE_TAG=${{ inputs.version }} pnpm --filter @tinkerbells/mobx-query run build
+      - run: RELEASE_TAG=${{ inputs.version }} pnpm --filter @tinkerbells88/mobx-query run build
       - run: npm publish packages/mobx-query/lib --access public --registry=https://registry.npmjs.org
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

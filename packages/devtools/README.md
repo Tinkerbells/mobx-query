@@ -15,7 +15,7 @@ pnpm add -D @tinkerbells/mobx-query-devtools
 Монтируйте DevTools только в dev режиме:
 
 ```typescript
-import { MobxQuery } from '@tinkerbells/mobx-query';
+import { MobxQuery } from '@tinkerbells88/mobx-query';
 import { mountMobxQueryDevtools } from '@tinkerbells/mobx-query-devtools';
 
 const cacheService = new MobxQuery({

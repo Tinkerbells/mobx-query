@@ -1,4 +1,4 @@
-# @tinkerbells/mobx-query
+# @tinkerbells88/mobx-query
 
 Библиотека для кеширования запросов.
 
@@ -45,11 +45,11 @@
 ## Installation
 
 ```bash
-npm install @tinkerbells/mobx-query --save
+npm install @tinkerbells88/mobx-query --save
 ```
 
 ```bash
-yarn add @tinkerbells/mobx-query
+yarn add @tinkerbells88/mobx-query
 ```
 
 ## Basic usage
@@ -72,7 +72,7 @@ yarn add @tinkerbells/mobx-query
 Инициализация MobxQuery:
 ```api/services/CacheService/CacheService.ts```
 ```ts
-import { MobxQuery } from '@tinkerbells/mobx-query';
+import { MobxQuery } from '@tinkerbells88/mobx-query';
 
 // рекомендуется явно задавать параметры для MobXQuery
 export const createCacheService = () =>
@@ -522,7 +522,7 @@ await docQueryWithCache.async(); // запрос не будет выполне�
 
 ### Как работает кэш
 
-Все данные, возвращаемые `QuerySet` и `InfiniteQuerySet`, кэшируются в едином хранилище @tinkerbells/mobx-query.
+Все данные, возвращаемые `QuerySet` и `InfiniteQuerySet`, кэшируются в едином хранилище @tinkerbells88/mobx-query.
 
 При первом вызове `create` в хранилище создается запись с ключем, состоящим из:
 - Хэш от функции конфигурации

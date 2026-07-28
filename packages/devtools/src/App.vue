@@ -3,7 +3,7 @@ const cards = [
   {
     title: 'Mobx Query Devtools',
     description:
-      'Инструмент для наблюдения и отладки состояний @tinkerbells/mobx-query. Панель закреплена снизу экрана.',
+      'Инструмент для наблюдения и отладки состояний @tinkerbells88/mobx-query. Панель закреплена снизу экрана.',
   },
   {
     title: 'Что можно сделать',

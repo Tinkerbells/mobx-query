@@ -20,13 +20,13 @@ export default defineConfig({
       formats: ['es', 'cjs']
     },
     rollupOptions: {
-      external: ['vue', 'mobx', 'mobx-vue-lite', '@tinkerbells/mobx-query'],
+      external: ['vue', 'mobx', 'mobx-vue-lite', '@tinkerbells88/mobx-query'],
       output: {
         globals: {
           vue: 'Vue',
           mobx: 'mobx',
           'mobx-vue-lite': 'mobxVueLite',
-          '@tinkerbells/mobx-query': 'MobxQuery'
+          '@tinkerbells88/mobx-query': 'MobxQuery'
         }
       }
     }

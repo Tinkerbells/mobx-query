@@ -1,4 +1,4 @@
-import type { MobxQuery } from "@tinkerbells/mobx-query";
+import type { MobxQuery } from "@tinkerbells88/mobx-query";
 import { cacheService } from "./cache";
 
 class AsyncStore {

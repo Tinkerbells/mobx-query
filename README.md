@@ -10,7 +10,7 @@ mobx-query/
 │   ├── docs/               # Документация
 │   └── web/                # Web демо
 ├── packages/
-│   ├── mobx-query/         # Основная библиотека @tinkerbells/mobx-query
+│   ├── mobx-query/         # Основная библиотека @tinkerbells88/mobx-query
 │   ├── ui/                 # Общие UI компоненты
 │   ├── eslint-config/      # Общие ESLint конфигурации
 │   └── typescript-config/  # Общие TypeScript конфигурации

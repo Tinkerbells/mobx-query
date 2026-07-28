@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const INTERNAL_PACKAGES = ['@tinkerbells/mobx-query'];
+const INTERNAL_PACKAGES = ['@tinkerbells88/mobx-query'];
 const OUT_DIR = path.resolve(__dirname, '..', 'lib');
 const PACKAGE_DIR = path.resolve(__dirname, '..');
 

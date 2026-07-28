@@ -1,5 +1,5 @@
 import { makeAutoObservable } from 'mobx';
-import type { Query } from '@tinkerbells/mobx-query';
+import type { Query } from '@tinkerbells88/mobx-query';
 import { cacheService } from './cache';
 
 type Todo = {
