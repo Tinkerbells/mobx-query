@@ -1863,13 +1863,6 @@ const QueryDetails = () => {
     const activeQueryVal = activeQuery()
     if (!activeQueryVal) return
 
-    // Сначала читаем текущее состояние ДО любых операций
-    const currentState = activeQueryVal.state
-    const currentData = currentState.data
-    const currentStatus = currentState.status
-    const currentFetchMeta = currentState.fetchMeta
-
-
     sendDevToolsEvent({
       type: 'TRIGGER_ERROR',
       queryHash: activeQueryVal.queryHash,
@@ -1879,56 +1872,11 @@ const QueryDetails = () => {
       errorType?.initializer(activeQueryVal) ??
       new Error('Unknown error from devtools')
 
-    const __previousQueryOptions = activeQueryVal.options
-    // mobx-query: сохраняем предыдущие данные для восстановления
-    const __previousData = currentData  // ← Используем захваченное значение
-    const __previousStatus = currentStatus  // ← Используем захваченное значение
-
-    const newState = {
+    activeQueryVal.setState({
       status: 'error' as const,
       fetchStatus: 'idle' as const,
       error,
-      fetchMeta: {
-        ...currentFetchMeta,  // ← Используем захваченное значение
-        __previousQueryOptions,
-        __previousData,        // ← Сохраняем данные
-        __previousStatus,      // ← Сохраняем статус
-      } as any,
-    } as QueryState<unknown, Error>
-
-    activeQueryVal.setState(newState)
-  }
-
-  const restoreQueryAfterLoadingOrError = () => {
-    const activeQueryVal = activeQuery()
-    if (!activeQueryVal) return
-
-    sendDevToolsEvent({
-      type: 'RESTORE_LOADING',
-      queryHash: activeQueryVal.queryHash,
-    })
-    const previousState = activeQueryVal.state
-    const previousOptions = (activeQueryVal.state.fetchMeta as any).__previousQueryOptions
-    // mobx-query: восстанавливаем сохраненные данные
-    const previousData = (activeQueryVal.state.fetchMeta as any).__previousData
-    const previousStatus = (activeQueryVal.state.fetchMeta as any).__previousStatus || 'pending'
-
-    activeQueryVal.cancel({ silent: true })
-
-    const newState = {
-      ...previousState,
-      data: previousData,           // ← Восстанавливаем данные
-      status: previousStatus,        // ← Восстанавливаем статус
-      fetchStatus: 'idle',
-      fetchMeta: null,
-    }
-
-    activeQueryVal.setState(newState)
-
-    // mobx-query: не нужно вызывать fetch, данные уже восстановлены
-    // if (previousOptions) {
-    //   activeQueryVal.fetch(previousOptions)
-    // }
+    } as Partial<QueryState<unknown, Error>>)
   }
 
   createEffect(() => {
@@ -2122,49 +2070,12 @@ const QueryDetails = () => {
               'tsqd-query-details-actions-btn',
               'tsqd-query-details-action-loading',
             )}
-            disabled={restoringLoading()}
+            disabled={statusLabel() === 'fetching'}
             onClick={() => {
-              if (activeQuery()?.state.data === undefined) {
-                setRestoringLoading(true)
-                restoreQueryAfterLoadingOrError()
-              } else {
-                const activeQueryVal = activeQuery()
-                if (!activeQueryVal) return
-
-                sendDevToolsEvent({
-                  type: 'TRIGGER_LOADING',
-                  queryHash: activeQueryVal.queryHash,
-                })
-                const __previousQueryOptions = activeQueryVal.options
-                // mobx-query: сохраняем предыдущие данные для восстановления
-                const __previousData = activeQueryVal.state.data
-                const __previousStatus = activeQueryVal.state.status
-
-                // Trigger a fetch in order to trigger suspense as well.
-                activeQueryVal.fetch({
-                  ...__previousQueryOptions,
-                  queryFn: () => {
-                    return new Promise(() => {
-                      // Never resolve
-                    })
-                  },
-                  gcTime: -1,
-                })
-
-                const newState = {
-                  data: undefined,
-                  status: 'pending',
-                  fetchStatus: 'fetching',
-                  fetchMeta: {
-                    ...activeQueryVal.state.fetchMeta,
-                    __previousQueryOptions,
-                    __previousData,        // ← Сохраняем данные
-                    __previousStatus,      // ← Сохраняем статус
-                  } as any,
-                } as QueryState<unknown, Error>
-
-                activeQueryVal.setState(newState)
-              }
+              const activeQueryVal = activeQuery()
+              if (!activeQueryVal) return
+              sendDevToolsEvent({ type: 'TRIGGER_LOADING', queryHash: activeQueryVal.queryHash })
+              activeQueryVal.fetch()
             }}
           >
             <span
@@ -2172,9 +2083,9 @@ const QueryDetails = () => {
                 background-color: ${t(colors.cyan[500], colors.cyan[400])};
               `}
             ></span>
-            {queryStatus() === 'pending' ? 'Restore' : 'Trigger'} Loading
+            Trigger Loading
           </button>
-          <Show when={errorTypes().length === 0 || queryStatus() === 'error'}>
+          <Show when={errorTypes().length === 0}>
             <button
               class={cx(
                 css`
@@ -2184,12 +2095,7 @@ const QueryDetails = () => {
                 'tsqd-query-details-action-error',
               )}
               onClick={() => {
-                if (queryStatus() === 'error') {
-                  setRestoringLoading(true)
-                  restoreQueryAfterLoadingOrError()
-                } else {
-                  triggerError()
-                }
+                triggerError()
               }}
               disabled={restoringLoading()}
             >
@@ -2198,11 +2104,11 @@ const QueryDetails = () => {
                   background-color: ${t(colors.red[500], colors.red[400])};
                 `}
               ></span>
-              {queryStatus() === 'error' ? 'Restore' : 'Trigger'} Error
+              Trigger Error
             </button>
           </Show>
           <Show
-            when={!(errorTypes().length === 0 || queryStatus() === 'error')}
+            when={errorTypes().length > 0}
           >
             <div
               class={cx(

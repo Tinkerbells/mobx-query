@@ -48,7 +48,7 @@ class StoreQuery implements Query {
   private prevData: unknown
   private prevError: unknown
   private _fetchMeta: any = null  // ← Добавляем хранилище для fetchMeta
-  private previewState: QueryState | null = null
+  private invalidated = false
   private readonly notifyStateChange: () => void
 
   constructor(
@@ -80,8 +80,6 @@ class StoreQuery implements Query {
   }
 
   get state(): QueryState {
-    if (this.previewState) return this.previewState
-
     return {
       data: this.model.data as never,
       dataUpdatedAt: this.lastUpdatedAt,
@@ -118,9 +116,8 @@ class StoreQuery implements Query {
       nextState.fetchMeta === null && this._fetchMeta !== null
 
     if (isRestoringDevtoolsState) {
-      this.previewState = null
       this._fetchMeta = null
-      this.notifyStateChange()
+      this.model.clearDevtoolsState()
       return
     }
 
@@ -132,9 +129,15 @@ class StoreQuery implements Query {
         '__previousStatus' in nextState.fetchMeta)
 
     if (isDevtoolsPreview) {
-      this.previewState = { ...this.state, ...nextState }
       this._fetchMeta = nextState.fetchMeta
-      this.notifyStateChange()
+      this.model.setDevtoolsState({
+        data: nextState.data,
+        error: nextState.error ?? undefined,
+        isIdle: false,
+        isLoading: nextState.fetchStatus === 'fetching',
+        isSuccess: nextState.status === 'success',
+        isError: nextState.status === 'error',
+      })
       return
     }
 
@@ -186,7 +189,7 @@ class StoreQuery implements Query {
 
   // mobx-query НЕ имеет концепции stale time - данные актуальны до invalidate()
   isStale() {
-    return false
+    return this.invalidated
   }
   // mobx-query НЕ имеет disabled queries
   isDisabled() {
@@ -201,7 +204,7 @@ class StoreQuery implements Query {
   }
   // mobx-query имеет метод invalidate(), но НЕ имеет флага isInvalidated
   isInvalidated() {
-    return false
+    return this.invalidated
   }
   isActive() {
     return this.model.isLoading || this.model.hasData
@@ -222,7 +225,9 @@ class StoreQuery implements Query {
     // TanStack's "Trigger Loading" passes a never-resolving queryFn. Preview
     // that state without invoking the application's actual executor.
     if (options?.queryFn) return Promise.resolve(options)
+    this.invalidated = false
     this.model.refetch()
+    this.notifyStateChange()
     return Promise.resolve(options)
   }
   fetchOptimistic(options?: any) {
@@ -232,9 +237,12 @@ class StoreQuery implements Query {
     this.model.setIsLoading(false)
   }
   invalidate() {
+    this.invalidated = true
     this.model.invalidate()
+    this.notifyStateChange()
   }
   reset() {
+    this.invalidated = false
     this.model.setData(undefined)
     this.model.setIsError(false)
     this.model.setIsSuccess(false)

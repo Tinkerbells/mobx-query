@@ -101,7 +101,13 @@ export class QueryModel {
   }
 
   public refetch() {
-    if (this.type !== 'mutation') this.query.sync?.()
+    if (this.type !== 'mutation') {
+      // `sync()` intentionally returns cached data for cache-first queries.
+      // A DevTools refetch must always request fresh data, like TanStack's
+      // refetch action, so invalidate before starting the executor.
+      this.query.invalidate?.()
+      this.query.sync?.()
+    }
   }
 
   public fetchMore() {
