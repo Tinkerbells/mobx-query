@@ -9,7 +9,7 @@ import type { DevtoolsComponentType } from './Devtools'
 
 const DevtoolsComponent: DevtoolsComponentType = (props) => {
   const [localStore, setLocalStore] = createLocalStorage({
-    prefix: 'TanstackQueryDevtools',
+    prefix: 'MobxQueryDevtools',
   })
 
   const colorScheme = getPreferredColorScheme()

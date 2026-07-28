@@ -46,7 +46,7 @@ import {
   Search,
   Settings,
   Sun,
-  TanstackLogo,
+  MobxLogo,
   Trash,
   Wifi,
   XCircle,
@@ -249,15 +249,15 @@ export const Devtools: Component<DevtoolsPanelProps> = (props) => {
               )}
             >
               <div aria-hidden="true">
-                <TanstackLogo />
+                <MobxLogo />
               </div>
               <button
                 type="button"
-                aria-label="Open Tanstack query devtools"
+                aria-label="Open MobX Query devtools"
                 onClick={() => props.setLocalStore('open', 'true')}
                 class="tsqd-open-btn"
               >
-                <TanstackLogo />
+                <MobxLogo />
               </button>
             </div>
           </Show>
@@ -763,12 +763,12 @@ export const ContentView: Component<ContentViewProps> = (props) => {
                   props.onClose()
                 }
               }}
-              aria-label="Close Tanstack query devtools"
+              aria-label="Close MobX Query devtools"
             >
               <span
                 class={cx(styles().tanstackLogo, 'tsqd-text-logo-tanstack')}
               >
-                TANSTACK
+                MOBX
               </span>
               <span
                 class={cx(
@@ -776,8 +776,7 @@ export const ContentView: Component<ContentViewProps> = (props) => {
                   'tsqd-text-logo-query-flavor',
                 )}
               >
-                {useQueryDevtoolsContext().queryFlavor} v
-                {useQueryDevtoolsContext().version}
+                QUERY DEVTOOLS · v{useQueryDevtoolsContext().version}
               </span>
             </button>
             <RadioGroup.Root

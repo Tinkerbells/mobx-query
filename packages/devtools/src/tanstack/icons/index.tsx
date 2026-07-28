@@ -1383,3 +1383,22 @@ export function TanstackLogo() {
     </svg>
   )
 }
+
+/** A compact atom mark inspired by MobX's orange/red identity. */
+export function MobxLogo() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="mobx-orbit" x1="5" y1="4" x2="27" y2="28" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#FF9955" />
+          <stop offset="0.55" stop-color="#E85D2A" />
+          <stop offset="1" stop-color="#B2381C" />
+        </linearGradient>
+      </defs>
+      <circle cx="16" cy="16" r="4.25" fill="#FFF8F4" stroke="#E85D2A" stroke-width="2" />
+      <ellipse cx="16" cy="16" rx="12.5" ry="5.75" stroke="url(#mobx-orbit)" stroke-width="2.2" />
+      <ellipse cx="16" cy="16" rx="12.5" ry="5.75" transform="rotate(60 16 16)" stroke="url(#mobx-orbit)" stroke-width="2.2" />
+      <ellipse cx="16" cy="16" rx="12.5" ry="5.75" transform="rotate(120 16 16)" stroke="url(#mobx-orbit)" stroke-width="2.2" />
+    </svg>
+  )
+}
