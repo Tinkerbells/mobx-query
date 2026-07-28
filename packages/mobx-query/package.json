@@ -1,6 +1,6 @@
 {
   "name": "@tinkerbells/mobx-query",
-  "version": "1.18.2",
+  "version": "1.0.0",
   "browser": "./src/index.ts",
   "main": "./src/index.ts",
   "scripts": {
