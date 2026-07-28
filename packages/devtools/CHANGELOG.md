@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.1.0...devtools-v1.2.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* **devtools:** restore solid package release ([a88674e](https://github.com/Tinkerbells/mobx-query/commit/a88674e6693a07bf73c8cd431f9d47ea9cc3f3d8))
+
+
+### Features
+
+* **devtools:** migrate to solid tanstack panel ([e658474](https://github.com/Tinkerbells/mobx-query/commit/e65847479028110daf9fddcfed0616c2e7c7d27c))
+* **devtools:** refresh mobx visual identity ([b06b54a](https://github.com/Tinkerbells/mobx-query/commit/b06b54a21a211e9d255df336fd6352d0cd10b8c7))
+
 # Changelog - MobX Query DevTools
 
 ## [Unreleased] - 2025-12-12
