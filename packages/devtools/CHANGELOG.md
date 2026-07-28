@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.2.1...devtools-v1.3.0) (2026-07-28)
+
+
+### Features
+
+* **devtools:** add mobx query lifecycle inspection ([bf78445](https://github.com/Tinkerbells/mobx-query/commit/bf78445e4df9fdf743b884148eae2ddf2ef0d85e))
+
 ## [1.2.1](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.2.0...devtools-v1.2.1) (2026-07-28)
 
 
