@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.1...devtools-v1.3.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* **devtools:** make query actions observable ([df6f953](https://github.com/Tinkerbells/mobx-query/commit/df6f953cb5bea00db5954466348b4582f2a6b506))
+
 ## [1.3.1](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.0...devtools-v1.3.1) (2026-07-28)
 
 
