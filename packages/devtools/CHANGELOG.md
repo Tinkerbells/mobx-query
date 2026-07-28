@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.0...devtools-v1.3.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** restore devtools type-check ([9f94bbb](https://github.com/Tinkerbells/mobx-query/commit/9f94bbb0a2b612168799090512248a688129a161))
+* **devtools:** remove viewport event overlay ([c2948f0](https://github.com/Tinkerbells/mobx-query/commit/c2948f0bb94c76ac078044c99609d6ef8634ca7e))
+
 # [1.3.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.2.1...devtools-v1.3.0) (2026-07-28)
 
 
