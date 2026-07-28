@@ -8,6 +8,7 @@
     "lint:types": "turbo run lint:types",
     "tests": "turbo run tests",
     "tests:ci": "turbo run tests:ci",
+    "release:mobx-query": "semantic-release",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
