@@ -378,4 +378,31 @@ describe('MobxQuery', () => {
     mobxQuery.createQuery(['another-query'], () => Promise.resolve('data'));
     expect(listener).toHaveBeenCalledTimes(2);
   });
+
+  it('Devtools публикует metadata и историю lifecycle-событий', () => {
+    const mobxQuery = new MobxQuery({ enabledAutoFetch: true });
+    const events: string[] = [];
+    const dispose = mobxQuery.subscribeDevtools((event) => events.push(event.type));
+
+    mobxQuery.createQuery(['query'], () => Promise.resolve('data'), {
+      fetchPolicy: 'network-only',
+      isBackground: true,
+      enabledSynchronization: true,
+      pollingTime: 1000,
+    });
+
+    const [entry] = mobxQuery.getDevtoolsEntries();
+    expect(entry?.meta).toMatchObject({
+      fetchPolicy: 'network-only',
+      enabledAutoFetch: true,
+      isBackground: true,
+      enabledSynchronization: true,
+      pollingTime: 1000,
+      retained: true,
+    });
+    expect(events).toContain('created');
+    expect(mobxQuery.getDevtoolsEvents().at(-1)?.type).toBe('created');
+
+    dispose();
+  });
 });

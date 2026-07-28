@@ -18,6 +18,11 @@ export class PollingService {
     private readonly _queryStorage: AdaptableMap<UnknownCachedQuery>,
     private readonly _invalidateByKeyHash: (keyHash: KeyHash) => void,
     private readonly _document: Document | undefined = globalThis.document,
+    private readonly _onEvent?: (
+      type: 'scheduled' | 'paused' | 'resumed',
+      key: KeyHash,
+      details?: Record<string, unknown>,
+    ) => void,
   ) {
     this.init();
   }
@@ -40,6 +45,7 @@ export class PollingService {
 
     if (this.isVisible) {
       this.restartPausedTimers();
+      this._onEvent?.('resumed', '', { visible: true });
     } else {
       this.pauseTimers();
     }
@@ -69,6 +75,7 @@ export class PollingService {
     [...this.timers.keys()].forEach((key) => {
       globalThis.clearTimeout(this.timers.get(key));
       this.timers.delete(key);
+      this._onEvent?.('paused', key, { targetDate: this.timerDates.get(key)?.targetDate });
     });
   };
 
@@ -120,6 +127,7 @@ export class PollingService {
       pollingTime,
       targetDate: Date.now() + pollingTime,
     });
+    this._onEvent?.('scheduled', key, { pollingTime, targetDate: Date.now() + pollingTime });
 
     if (this.isVisible) {
       this.timers.set(

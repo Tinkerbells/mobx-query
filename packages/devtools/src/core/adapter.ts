@@ -1,6 +1,7 @@
 import type {
   MobxQuery,
   MobxQueryDevtoolsEntry,
+  MobxQueryDevtoolsEvent,
 } from '@tinkerbells88/mobx-query';
 
 /**
@@ -17,7 +18,11 @@ export class DevToolsAdapter {
     return this.client.getDevtoolsEntries();
   }
 
-  public subscribe(listener: () => void) {
+  public events(): MobxQueryDevtoolsEvent[] {
+    return this.client.getDevtoolsEvents()
+  }
+
+  public subscribe(listener: (event: MobxQueryDevtoolsEvent) => void) {
     return this.client.subscribeDevtools(listener);
   }
 }

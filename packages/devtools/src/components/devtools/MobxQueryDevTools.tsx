@@ -1,4 +1,4 @@
-import { createMemo, onCleanup } from 'solid-js'
+import { createMemo, For, Show, onCleanup } from 'solid-js'
 import { autorun } from 'mobx'
 
 import type { DevToolsStore } from '../../core/store'
@@ -29,7 +29,7 @@ export default function MobxQueryDevTools(props: Props) {
     bridge().client.destroy()
   })
 
-  return (
+  return (<>
     <DevtoolsComponent
       client={bridge().client}
       queryFlavor="mobx-query"
@@ -37,7 +37,25 @@ export default function MobxQueryDevTools(props: Props) {
       onlineManager={bridge().onlineManager}
       shadowDOMTarget={props.shadowRoot as any}
     />
-  )
+    <aside
+        aria-label="MobX Query event timeline"
+        style={{
+          position: 'fixed', bottom: '16px', left: '16px', width: '320px',
+          'max-height': '220px', overflow: 'auto', padding: '10px',
+          'border-radius': '10px', color: '#fee9de', background: '#2b1710',
+          border: '1px solid #e85d2a', 'font-family': 'ui-monospace, monospace',
+          'font-size': '11px', 'z-index': '2147483647',
+        }}
+      >
+        <strong>MobX Query events</strong>
+        <For each={props.store.events.slice(-20).reverse()}>
+          {(event) => <div style={{ padding: '4px 0', 'border-bottom': '1px solid #5b2d1d' }}>
+            {new Date(event.timestamp).toLocaleTimeString()} · {event.type}
+            <Show when={event.hash}> · {event.hash}</Show>
+          </div>}
+        </For>
+      </aside>
+  </>)
 }
 
 // --- bridge to satisfy tanstack UI contracts using DevToolsStore data ---
@@ -247,7 +265,7 @@ class StoreQuery implements Query {
     return []
   }
   get options() {
-    return {}
+    return this.model.meta
   }
 }
 

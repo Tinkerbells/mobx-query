@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 
 import type { DevToolsAdapter } from './adapter';
 import { QueryModel } from './models/QueryModel';
+import type { MobxQueryDevtoolsEvent } from '@tinkerbells88/mobx-query';
 
 export type SortOption = 'status' | 'queryKey' | 'lastUpdated';
 export type SortOrder = 'asc' | 'desc';
@@ -13,6 +14,7 @@ export class DevToolsStore {
   public queryModels: QueryModel[];
   public sortBy: SortOption;
   public sortOrder: SortOrder;
+  public events: MobxQueryDevtoolsEvent[];
 
   private unsubscribe?: () => void;
   private readonly adapter: DevToolsAdapter;
@@ -25,9 +27,11 @@ export class DevToolsStore {
     this.queryModels = [];
     this.sortBy = 'status';
     this.sortOrder = 'asc';
+    this.events = this.adapter.events();
 
     makeAutoObservable(this, {}, { autoBind: true });
     this.sync();
+    this.startListening();
   }
 
   public destroy() {
@@ -37,12 +41,7 @@ export class DevToolsStore {
   public toggleOpen() {
     this.isOpen = !this.isOpen;
 
-    if (this.isOpen) {
-      this.sync();
-      this.startListening();
-    } else {
-      this.stopListening();
-    }
+    if (this.isOpen) this.sync();
   }
 
   public setSearch(term: string) {
@@ -126,15 +125,15 @@ export class DevToolsStore {
     const snapshots = this.adapter.list();
     const map = new Map(this.queryModels.map((m) => [m.hash, m]));
 
-    const nextModels = snapshots.map(({ hash, key, type, query }) => {
+    const nextModels = snapshots.map(({ hash, key, type, query, meta }) => {
       const existing = map.get(hash);
 
       if (existing) {
-        existing.updateQuery(query, type);
+        existing.updateQuery(query, type, meta);
         return existing;
       }
 
-      return new QueryModel(hash, key, type, query);
+      return new QueryModel(hash, key, type, query, meta);
     });
 
     runInAction(() => {
@@ -154,9 +153,16 @@ export class DevToolsStore {
     });
   }
 
+  public syncEvents() {
+    this.events = this.adapter.events();
+  }
+
   private startListening() {
     if (this.unsubscribe) return;
-    this.unsubscribe = this.adapter.subscribe(this.sync);
+    this.unsubscribe = this.adapter.subscribe(() => {
+      this.sync();
+      this.syncEvents();
+    });
   }
 
   private stopListening() {

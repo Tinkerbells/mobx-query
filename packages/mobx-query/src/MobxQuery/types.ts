@@ -43,4 +43,34 @@ export type MobxQueryDevtoolsEntry = {
   key: CacheKey[];
   type: 'query' | 'infinite' | 'mutation';
   query: MobxQueryDevtoolsQuery;
+  meta: MobxQueryDevtoolsMeta;
+};
+
+/** Configuration needed to inspect a cache entry without private fields. */
+export type MobxQueryDevtoolsMeta = {
+  fetchPolicy: FetchPolicy;
+  enabledAutoFetch: boolean;
+  isBackground: boolean;
+  enabledSynchronization: boolean;
+  pollingTime?: number;
+  retained: boolean;
+};
+
+export type MobxQueryDevtoolsEvent = {
+  id: number;
+  timestamp: number;
+  type:
+    | 'created'
+    | 'invalidated'
+    | 'mutation-created'
+    | 'retained'
+    | 'released'
+    | 'polling-scheduled'
+    | 'polling-paused'
+    | 'polling-resumed'
+    | 'synchronization-sent'
+    | 'synchronization-received';
+  hash?: string;
+  key?: CacheKey[];
+  details?: Record<string, unknown>;
 };

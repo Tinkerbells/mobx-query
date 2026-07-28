@@ -31,6 +31,8 @@ import type {
   KeyHash,
   Keys,
   MobxQueryDevtoolsEntry,
+  MobxQueryDevtoolsEvent,
+  MobxQueryDevtoolsMeta,
   MobxQueryDevtoolsQuery,
   UnknownCachedQuery,
 } from './types';
@@ -195,7 +197,15 @@ export class MobxQuery<TDefaultError = void> {
    * Listeners are deliberately plain JS callbacks: the cache itself stays
    * weak-reference based and does not retain query instances for devtools.
    */
-  private readonly devtoolsListeners = new Set<() => void>();
+  private readonly devtoolsListeners = new Set<
+    (event: MobxQueryDevtoolsEvent) => void
+  >();
+
+  private readonly devtoolsMeta = new Map<KeyHash, MobxQueryDevtoolsMeta>();
+
+  private readonly devtoolsEvents: MobxQueryDevtoolsEvent[] = [];
+
+  private readonly devtoolsRetainedQueries = new Map<KeyHash, UnknownCachedQuery>();
 
   private readonly devtoolsMutations = new Map<
     string,
@@ -259,6 +269,12 @@ export class MobxQuery<TDefaultError = void> {
       this.queriesMap,
       this.invalidateByKeyHash,
       _document,
+      (type, hash, details) =>
+        this.publishDevtools({
+          type: `polling-${type}` as MobxQueryDevtoolsEvent['type'],
+          hash: hash || undefined,
+          details,
+        }),
     );
 
     this.synchronizationService = new SynchronizationService(
@@ -266,6 +282,11 @@ export class MobxQuery<TDefaultError = void> {
       this.queryDataStorageFactory,
       this.pollingService,
       _BroadcastChannel,
+      (type, hash) =>
+        this.publishDevtools({
+          type: `synchronization-${type}` as MobxQueryDevtoolsEvent['type'],
+          hash,
+        }),
     );
   }
 
@@ -325,7 +346,7 @@ export class MobxQuery<TDefaultError = void> {
     // чтобы сборщик мусора мог удалить неиспользуемые квери
     this.queriesMap.convertToWeak(keyHash);
     this.pollingService.clean(keyHash);
-    this.notifyDevtools();
+    this.publishDevtools({ type: 'invalidated', hash: keyHash, key: this.keys.get(keyHash) });
   };
 
   /**
@@ -347,6 +368,13 @@ export class MobxQuery<TDefaultError = void> {
         key: queryKey.slice(0, -1),
         type,
         query: query as unknown as MobxQueryDevtoolsQuery,
+        meta: this.devtoolsMeta.get(hash) ?? {
+          fetchPolicy: this.defaultFetchPolicy,
+          enabledAutoFetch: this.defaultEnabledAutoFetch,
+          isBackground: false,
+          enabledSynchronization: false,
+          retained: this.devtoolsRetainedQueries.has(hash),
+        },
       });
     });
 
@@ -363,6 +391,13 @@ export class MobxQuery<TDefaultError = void> {
         key: ['mutation', hash],
         type: 'mutation',
         query: mutation as unknown as MobxQueryDevtoolsQuery,
+        meta: {
+          fetchPolicy: 'network-only',
+          enabledAutoFetch: false,
+          isBackground: false,
+          enabledSynchronization: false,
+          retained: true,
+        },
       });
     });
 
@@ -370,14 +405,39 @@ export class MobxQuery<TDefaultError = void> {
   };
 
   /** Subscribes to cache-entry changes; call the returned disposer on unmount. */
-  public subscribeDevtools = (listener: () => void) => {
-    this.devtoolsListeners.add(listener);
+  public getDevtoolsEvents = () => [...this.devtoolsEvents];
 
-    return () => this.devtoolsListeners.delete(listener);
+  public subscribeDevtools = (listener: (event: MobxQueryDevtoolsEvent) => void) => {
+    this.devtoolsListeners.add(listener);
+    this.keys.forEach((_key, hash) => {
+      const query = this.queriesMap.get(hash);
+      if (query) this.devtoolsRetainedQueries.set(hash, query);
+    });
+
+    return () => {
+      this.devtoolsListeners.delete(listener);
+      if (this.devtoolsListeners.size === 0) {
+        this.devtoolsRetainedQueries.clear();
+        this.publishDevtools({ type: 'released' });
+      }
+    };
+  };
+
+  private publishDevtools = (
+    event: Omit<MobxQueryDevtoolsEvent, 'id' | 'timestamp'>,
+  ) => {
+    const nextEvent: MobxQueryDevtoolsEvent = {
+      ...event,
+      id: this.devtoolsEvents.length + 1,
+      timestamp: Date.now(),
+    };
+    this.devtoolsEvents.push(nextEvent);
+    if (this.devtoolsEvents.length > 200) this.devtoolsEvents.shift();
+    this.devtoolsListeners.forEach((listener) => listener(nextEvent));
   };
 
   private notifyDevtools = () => {
-    this.devtoolsListeners.forEach((listener) => listener());
+    this.publishDevtools({ type: 'retained' });
   };
 
   /**
@@ -513,7 +573,22 @@ export class MobxQuery<TDefaultError = void> {
     );
 
     this.keys.set(keys.queryKeyHash, keys.queryKey);
-    this.notifyDevtools();
+    this.devtoolsMeta.set(keys.queryKeyHash, {
+      fetchPolicy,
+      enabledAutoFetch,
+      isBackground: Boolean(createParams?.isBackground),
+      enabledSynchronization:
+        createParams?.enabledSynchronization ?? this.defaultEnabledSynchronization,
+      pollingTime: createParams?.pollingTime,
+      retained: this.devtoolsListeners.size > 0,
+    });
+    if (this.devtoolsListeners.size > 0) {
+      this.devtoolsRetainedQueries.set(
+        keys.queryKeyHash,
+        query as CachedQuery<unknown, unknown, false>,
+      );
+    }
+    this.publishDevtools({ type: 'created', hash: keys.queryKeyHash, key });
 
     return query;
   };
@@ -641,7 +716,7 @@ export class MobxQuery<TDefaultError = void> {
       hash,
       new WeakRef(mutation as unknown as Mutation<unknown, unknown, unknown>),
     );
-    this.notifyDevtools();
+    this.publishDevtools({ type: 'mutation-created', hash, key: ['mutation', hash] });
 
     return mutation;
   };

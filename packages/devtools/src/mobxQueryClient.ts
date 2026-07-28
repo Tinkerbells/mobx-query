@@ -2,6 +2,7 @@ import { DevToolsAdapter } from './core/adapter'
 import { QueryModel } from './core/models/QueryModel'
 import type {
   MobxQueryDevtoolsEntry,
+  MobxQueryDevtoolsMeta,
   MobxQueryDevtoolsQuery,
 } from '@tinkerbells88/mobx-query'
 import type {
@@ -33,8 +34,9 @@ class QueryProxy implements Query {
   public refresh(
     query: MobxQueryDevtoolsQuery,
     type: MobxQueryDevtoolsEntry['type'],
+    meta: MobxQueryDevtoolsMeta,
   ) {
-    this.model.updateQuery(query, type)
+    this.model.updateQuery(query, type, meta)
     if (this.prevData !== this.model.data || this.prevError !== this.model.error) {
       this.lastUpdatedAt = Date.now()
       this.prevData = this.model.data
@@ -179,17 +181,17 @@ class MobxQueryCache implements QueryCache {
     const next = new Map<string, QueryProxy>()
     const nextKeyIndex = new Map<string, QueryProxy>()
 
-    snapshots.forEach(({ hash, key, type, query }) => {
+    snapshots.forEach(({ hash, key, type, query, meta }) => {
       const existing = this.proxies.get(hash)
       if (existing) {
-        existing.refresh(query, type)
+        existing.refresh(query, type, meta)
         next.set(hash, existing)
         nextKeyIndex.set(MobxQueryCache.signature(existing.queryKey), existing)
         this.notify({ type: 'queryUpdated', query: existing })
         return
       }
 
-      const proxy = new QueryProxy(new QueryModel(hash, key, type, query))
+      const proxy = new QueryProxy(new QueryModel(hash, key, type, query, meta))
       next.set(hash, proxy)
       nextKeyIndex.set(MobxQueryCache.signature(proxy.queryKey), proxy)
       this.notify({ type: 'queryAdded', query: proxy })

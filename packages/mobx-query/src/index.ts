@@ -10,6 +10,8 @@ export {
   type CreateMutationParams,
   type CreateQueryParams,
   type MobxQueryDevtoolsEntry,
+  type MobxQueryDevtoolsEvent,
+  type MobxQueryDevtoolsMeta,
   type MobxQueryDevtoolsQuery,
 } from './MobxQuery';
 

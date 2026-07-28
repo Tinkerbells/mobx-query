@@ -15,6 +15,10 @@ export class SynchronizationService {
     _BroadcastChannel:
       | typeof BroadcastChannel
       | undefined = globalThis.BroadcastChannel,
+    private readonly _onEvent?: (
+      type: 'sent' | 'received',
+      key: Keys['queryKeyHash'],
+    ) => void,
   ) {
     if (_BroadcastChannel) {
       this.broadcastChannel = new _BroadcastChannel('@tinkerbells/mobx-query');
@@ -45,6 +49,7 @@ export class SynchronizationService {
         ?.setStatues(data.statuses);
 
       this._pollingService.restart(data.queryKeyHash);
+      this._onEvent?.('received', data.queryKeyHash);
     });
   };
 
@@ -64,5 +69,6 @@ export class SynchronizationService {
         statuses: statusStorage?.statuses,
       }),
     );
+    this._onEvent?.('sent', keys.queryKeyHash);
   };
 }

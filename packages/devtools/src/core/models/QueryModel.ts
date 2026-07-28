@@ -3,6 +3,7 @@ import type {
   MobxQueryDevtoolsEntry,
   MobxQueryDevtoolsQuery,
   MobxQueryDevtoolsState,
+  MobxQueryDevtoolsMeta,
 } from '@tinkerbells88/mobx-query'
 
 /** View model used by the TanStack-compatible presentation layer. */
@@ -11,6 +12,7 @@ export class QueryModel {
   public readonly key: unknown[]
   private typeValue: MobxQueryDevtoolsEntry['type']
   private query: MobxQueryDevtoolsQuery
+  private metaValue: MobxQueryDevtoolsMeta
   private devtoolsStateOverride: Partial<MobxQueryDevtoolsState> | null = null
 
   constructor(
@@ -18,20 +20,24 @@ export class QueryModel {
     key: unknown[],
     type: MobxQueryDevtoolsEntry['type'],
     query: MobxQueryDevtoolsQuery,
+    meta: MobxQueryDevtoolsMeta,
   ) {
     this.hash = hash
     this.key = key
     this.typeValue = type
     this.query = query
+    this.metaValue = meta
     makeAutoObservable(this, {}, { autoBind: true })
   }
 
   public updateQuery(
     query: MobxQueryDevtoolsQuery,
     type: MobxQueryDevtoolsEntry['type'],
+    meta: MobxQueryDevtoolsMeta,
   ) {
     this.query = query
     this.typeValue = type
+    this.metaValue = meta
   }
 
   private get state() {
@@ -88,6 +94,10 @@ export class QueryModel {
 
   get type() {
     return this.typeValue
+  }
+
+  get meta() {
+    return this.metaValue
   }
 
   public refetch() {
