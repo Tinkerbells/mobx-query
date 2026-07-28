@@ -1,3 +1,18 @@
+# [1.2.0](https://github.com/Tinkerbells/mobx-query/compare/v1.1.0...v1.2.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** restore devtools type-check ([9f94bbb](https://github.com/Tinkerbells/mobx-query/commit/9f94bbb0a2b612168799090512248a688129a161))
+* **devtools:** restore interactive query states ([0e4b8ac](https://github.com/Tinkerbells/mobx-query/commit/0e4b8ac254a91bd3e535d974ab0bd006d64aea6f))
+* **devtools:** restore solid package release ([a88674e](https://github.com/Tinkerbells/mobx-query/commit/a88674e6693a07bf73c8cd431f9d47ea9cc3f3d8))
+
+
+### Features
+
+* **devtools:** add mobx query lifecycle inspection ([bf78445](https://github.com/Tinkerbells/mobx-query/commit/bf78445e4df9fdf743b884148eae2ddf2ef0d85e))
+* **devtools:** refresh mobx visual identity ([b06b54a](https://github.com/Tinkerbells/mobx-query/commit/b06b54a21a211e9d255df336fd6352d0cd10b8c7))
+
 # [1.1.0](https://github.com/Tinkerbells/mobx-query/compare/v1.0.0...v1.1.0) (2026-07-28)
 
 
