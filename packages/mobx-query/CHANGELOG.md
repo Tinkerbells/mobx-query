@@ -1,3 +1,20 @@
+# [1.3.0](https://github.com/Tinkerbells/mobx-query/compare/v1.2.0...v1.3.0) (2026-07-29)
+
+
+### Bug Fixes
+
+* **ci:** make mobx-query lint pass ([a54cac5](https://github.com/Tinkerbells/mobx-query/commit/a54cac5bd6f4c3352b34def214b807375b3f41ac))
+* **devtools:** keep restore error action visible ([55bc97e](https://github.com/Tinkerbells/mobx-query/commit/55bc97e958a42ab099a528fc714fd2a6fcf3aa86))
+* **devtools:** make query actions observable ([df6f953](https://github.com/Tinkerbells/mobx-query/commit/df6f953cb5bea00db5954466348b4582f2a6b506))
+* **devtools:** preserve release history ([12c62d5](https://github.com/Tinkerbells/mobx-query/commit/12c62d5d6ff0fd8dc54a1802fc8e168fdd3cf81a))
+* **devtools:** remove viewport event overlay ([c2948f0](https://github.com/Tinkerbells/mobx-query/commit/c2948f0bb94c76ac078044c99609d6ef8634ca7e))
+
+
+### Features
+
+* **devtools:** add persistent query state overrides ([41538a8](https://github.com/Tinkerbells/mobx-query/commit/41538a8acc9dcf68e48cd3fd5a693d29a2f5ffec))
+* **devtools:** replace legacy panel with React UI ([807a464](https://github.com/Tinkerbells/mobx-query/commit/807a4640dfa73aa2ea41eeec0dc0a857295ee4fd))
+
 # [1.2.0](https://github.com/Tinkerbells/mobx-query/compare/v1.1.0...v1.2.0) (2026-07-28)
 
 
