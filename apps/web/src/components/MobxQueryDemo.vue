@@ -39,6 +39,8 @@ const handleIdInput = (event: Event) => {
             <button type="button" @click="store.next(1)">Следующий</button>
             <button type="button" @click="store.load" :disabled="store.isLoading">Запросить</button>
             <button type="button" class="secondary" @click="store.invalidateCurrent">Инвалидировать кэш</button>
+            <button type="button" class="danger" @click="store.simulateError" :disabled="store.isLoading">Симулировать ошибку</button>
+            <button v-if="store.isError" type="button" @click="store.retryCurrent" :disabled="store.isLoading">Повторить запрос</button>
           </div>
 
           <p class="cache" :class="{ 'cache--hit': store.isCached }">
@@ -76,6 +78,7 @@ const handleIdInput = (event: Event) => {
       <footer class="footer">
         <p>Попробуйте походить по id и вернуться назад — данные из кэша появятся без спиннера. Нажмите «Инвалидировать
           кэш», чтобы форсировать повторный запрос.</p>
+        <p>«Симулировать ошибку» создаёт ошибочное состояние текущего query: оно видно и в приложении, и в DevTools.</p>
       </footer>
     </section>
   </Observer>

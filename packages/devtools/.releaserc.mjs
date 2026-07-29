@@ -4,13 +4,19 @@ export default {
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
-    ['@semantic-release/changelog', { changelogFile: 'CHANGELOG.md' }],
-    ['@semantic-release/exec', { prepareCmd: 'node scripts/set-version.cjs ${nextRelease.version}' }],
-    ['@semantic-release/npm', { pkgRoot: 'dist' }],
+    ['@semantic-release/changelog', { changelogFile: 'packages/devtools/CHANGELOG.md' }],
+    [
+      '@semantic-release/exec',
+      {
+        prepareCmd:
+          'node packages/devtools/scripts/set-version.cjs ${nextRelease.version} && RELEASE_TAG=${nextRelease.version} pnpm --filter @tinkerbells88/mobx-query-devtools run build',
+      },
+    ],
+    ['@semantic-release/npm', { pkgRoot: 'packages/devtools/lib' }],
     [
       '@semantic-release/git',
       {
-        assets: ['package.json', 'CHANGELOG.md'],
+        assets: ['packages/devtools/package.json', 'packages/devtools/CHANGELOG.md'],
         message: 'chore(devtools-release): ${nextRelease.version} [skip ci]',
       },
     ],

@@ -9,32 +9,34 @@ type Todo = {
   completed: boolean;
 };
 
-const todoFetcher = {
-  queries: {
-    todo: cacheService.createQuerySet((id: number) => ({
-      // Ключ используется для кеширования и инвалидации
-      keys: ['todo', id],
-      execute: async () => {
-        await delay(750);
-        return createFakeTodo(id);
-      },
-    })),
-  },
-};
-
 const MIN_ID = 1;
 const MAX_ID = 200;
 
 export class TodoStore {
   public currentId = 1;
   public seenIds: number[] = [1];
+  public shouldFail = false;
+  private readonly fetcher = {
+    queries: {
+      todo: cacheService.createQuerySet((id: number) => ({
+        keys: ['todo', id],
+        execute: async () => {
+          await delay(450);
+          if (this.shouldFail) {
+            throw new Error(`Не удалось загрузить todo #${id} (тестовая ошибка)`);
+          }
+          return createFakeTodo(id);
+        },
+      })),
+    },
+  };
   private readonly toggleMutation = cacheService.createMutationSet(async (id: number) => {
     await delay(600);
     return { id };
   });
   private readonly toggle = this.toggleMutation.create();
 
-  public constructor(private readonly fetcher = todoFetcher) {
+  public constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
@@ -133,6 +135,18 @@ export class TodoStore {
     return this.todoQuery.async();
   }
 
+  public async simulateError() {
+    this.shouldFail = true;
+    this.invalidateCurrent();
+    return this.load();
+  }
+
+  public async retryCurrent() {
+    this.shouldFail = false;
+    this.invalidateCurrent();
+    return this.load();
+  }
+
   public invalidateCurrent() {
     this.fetcher.queries.todo.invalidate(this.currentId);
   }
@@ -165,7 +179,6 @@ export class TodoStore {
 }
 
 export const todoStore = new TodoStore();
-export type TodoFetcher = typeof todoFetcher;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

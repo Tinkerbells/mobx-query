@@ -1,52 +1,39 @@
 {
   "name": "@tinkerbells88/mobx-query-devtools",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "type": "module",
-  "main": "./dist/mobx-query-devtools.cjs.js",
-  "module": "./dist/mobx-query-devtools.es.js",
-  "types": "./dist/index.d.ts",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "browser": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "exports": {
     ".": {
-      "development": "./dist/mobx-query-devtools.es.js",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/mobx-query-devtools.es.js",
-      "require": "./dist/mobx-query-devtools.cjs.js"
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "default": "./lib/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["lib"],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && node scripts/prepare-package.cjs",
-    "preview": "vite preview",
-    "lint:types": "tsc --noEmit -p tsconfig.app.json",
-    "release": "semantic-release"
+    "lint:types": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json && node scripts/prepare-package.cjs",
+    "tests": "vitest run"
   },
   "dependencies": {
     "@tinkerbells88/mobx-query": "workspace:*",
-    "@kobalte/core": "^0.13.4",
-    "@solid-primitives/keyed": "^1.2.2",
-    "@solid-primitives/resize-observer": "^2.0.26",
-    "@solid-primitives/storage": "^1.3.11",
-    "@tanstack/match-sorter-utils": "^8.19.4",
-    "clsx": "^2.1.1",
-    "goober": "^2.1.16",
-    "mobx": "^6.13.6",
-    "solid-js": "^1.9.7",
-    "solid-transition-group": "^0.2.3",
-    "superjson": "^2.2.2"
+    "mobx": "^6.15.0",
+    "mobx-react-lite": "^4.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "tsup-preset-solid": "^2.2.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
-    "vite-plugin-dts": "^4.3.0",
-    "vite-plugin-solid": "^2.11.6"
+    "vitest": "^4.0.15"
   }
 }

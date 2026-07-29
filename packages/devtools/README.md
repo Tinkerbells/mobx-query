@@ -1,86 +1,22 @@
 # @tinkerbells88/mobx-query-devtools
 
-Developer tools для визуализации и отладки MobX Query кеша.
+Framework-agnostic DevTools for `@tinkerbells88/mobx-query`.
 
-## Установка
+It provides a floating panel with query and mutation states, cache-data inspection and editing, filtering, lifecycle history, plus refetch, invalidate and infinite-query pagination controls. Its UI is mounted in a Shadow DOM, so host application styles do not leak in.
 
-```bash
-npm install -D @tinkerbells88/mobx-query-devtools
-# или
-pnpm add -D @tinkerbells88/mobx-query-devtools
-```
-
-## Использование
-
-Монтируйте DevTools только в dev режиме:
-
-```typescript
-import { MobxQuery } from '@tinkerbells88/mobx-query';
+```ts
 import { mountMobxQueryDevtools } from '@tinkerbells88/mobx-query-devtools';
+import { cacheService } from './cache-service';
 
-const cacheService = new MobxQuery({
-  enabledAutoFetch: true,
-  fetchPolicy: 'cache-first'
-});
-
-// Только в dev режиме
-if (process.env.NODE_ENV === 'development') {
-  mountMobxQueryDevtools(cacheService, document.body);
+if (import.meta.env.DEV) {
+  const disposeDevtools = mountMobxQueryDevtools(cacheService);
+  // Call disposeDevtools() when the application root unmounts.
 }
 ```
 
-### API
+`mountMobxQueryDevtools(client, target?, options?)` returns an unmount function.
 
-```typescript
-function mountMobxQueryDevtools(
-  client: MobxQuery,
-  target?: HTMLElement
-): () => void
-```
+Options:
 
-**Параметры:**
-- `client` - экземпляр MobxQuery
-- `target` - DOM элемент для монтирования (по умолчанию: `document.body`)
-
-**Возвращает:** функцию для размонтирования DevTools
-
-### Пример с React
-
-```tsx
-import { useEffect } from 'react';
-import { cacheService } from './services/cache';
-import { mountMobxQueryDevtools } from '@tinkerbells88/mobx-query-devtools';
-
-function App() {
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const unmount = mountMobxQueryDevtools(cacheService);
-      return unmount;
-    }
-  }, []);
-
-  return <YourApp />;
-}
-```
-
-## Разработка
-
-```bash
-# Запуск dev-сервера для локальной разработки
-pnpm dev
-
-# Сборка библиотеки
-pnpm build
-```
-
-## Возможности
-
-- 📊 Визуализация всех queries и их состояний
-- 🔍 Инспектор данных кеша
-- ⚡ Реактивное обновление при изменении кеша
-- 🎨 Shadow DOM для изоляции стилей
-- 📦 Легковесная сборка (external dependencies)
-
-## Лицензия
-
-См. [LICENSE](../../packages/mobx-query/LICENSE)
+- `initialIsOpen` — opens the panel immediately.
+- `position` — `bottom-right` (default) or `bottom-left`.
