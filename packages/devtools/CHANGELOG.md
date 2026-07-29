@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.4.0...devtools-v1.4.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **devtools:** keep restore error action visible ([55bc97e](https://github.com/Tinkerbells/mobx-query/commit/55bc97e958a42ab099a528fc714fd2a6fcf3aa86))
+
 # [1.4.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.2...devtools-v1.4.0) (2026-07-29)
 
 

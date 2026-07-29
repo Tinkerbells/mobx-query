@@ -1,6 +1,6 @@
 {
   "name": "@tinkerbells88/mobx-query-devtools",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "type": "module",
   "main": "./dist/mobx-query-devtools.cjs.js",
   "module": "./dist/mobx-query-devtools.es.js",
