@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/Tinkerbells/mobx-query/compare/v1.3.0...v1.3.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **ci:** build devtools before release verification ([d03b83b](https://github.com/Tinkerbells/mobx-query/commit/d03b83bd8f596c81751ceb5f49feabb1ec3c389c))
+
 # [1.3.0](https://github.com/Tinkerbells/mobx-query/compare/v1.2.0...v1.3.0) (2026-07-29)
 
 
