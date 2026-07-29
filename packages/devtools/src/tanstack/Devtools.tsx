@@ -1767,6 +1767,9 @@ const QueryDetails = () => {
   const queryClient = useQueryDevtoolsContext().client
 
   const [restoringLoading, setRestoringLoading] = createSignal(false)
+  const [previewKind, setPreviewKind] = createSignal<
+    'loading' | 'error' | null
+  >(null)
   const [dataMode, setDataMode] = createSignal<'view' | 'edit'>('view')
   const [dataEditError, setDataEditError] = createSignal<boolean>(false)
 
@@ -1827,11 +1830,15 @@ const QueryDetails = () => {
   })
 
   const isDevtoolsLoadingPreview = createMemo(
-    () => isDevtoolsPreview() && activeQueryState()?.status === 'pending',
+    () =>
+      previewKind() === 'loading' ||
+      (isDevtoolsPreview() && activeQueryState()?.status === 'pending'),
   )
 
   const isDevtoolsErrorPreview = createMemo(
-    () => isDevtoolsPreview() && activeQueryState()?.status === 'error',
+    () =>
+      previewKind() === 'error' ||
+      (isDevtoolsPreview() && activeQueryState()?.status === 'error'),
   )
 
   const observerCount = createSubscribeToQueryCacheBatcher(
@@ -1896,6 +1903,7 @@ const QueryDetails = () => {
         __previousStatus: currentState.status,
       },
     } as Partial<QueryState<unknown, Error>>)
+    setPreviewKind('error')
   }
 
   const restoreQueryAfterPreview = () => {
@@ -1904,12 +1912,18 @@ const QueryDetails = () => {
 
     sendDevToolsEvent({ type: 'RESTORE_LOADING', queryHash: query.queryHash })
     query.setState({ fetchMeta: null })
+    setPreviewKind(null)
   }
 
   createEffect(() => {
     if (statusLabel() !== 'fetching') {
       setRestoringLoading(false)
     }
+  })
+
+  createEffect(() => {
+    selectedQueryHash()
+    setPreviewKind(null)
   })
 
   const getQueryStatusColors = () => {
@@ -2119,6 +2133,7 @@ const QueryDetails = () => {
                   __previousStatus: currentState.status,
                 },
               })
+              setPreviewKind('loading')
             }}
           >
             <span
