@@ -17,4 +17,9 @@ export {
 
 export type { InfiniteQuerySet, MutationSet, QuerySet } from './Sets';
 
-export type { CacheKey, FetchPolicy, MobxQueryDevtoolsState } from './types';
+export type {
+  CacheKey,
+  FetchPolicy,
+  MobxQueryDevtoolsOverride,
+  MobxQueryDevtoolsState,
+} from './types';

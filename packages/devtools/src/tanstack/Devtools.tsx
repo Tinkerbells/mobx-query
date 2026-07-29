@@ -1821,6 +1821,19 @@ const QueryDetails = () => {
     return query.state.status
   })
 
+  const isDevtoolsPreview = createMemo(() => {
+    const meta = activeQueryState()?.fetchMeta as Record<string, unknown> | null
+    return Boolean(meta && '__previousData' in meta && '__previousStatus' in meta)
+  })
+
+  const isDevtoolsLoadingPreview = createMemo(
+    () => isDevtoolsPreview() && activeQueryState()?.status === 'pending',
+  )
+
+  const isDevtoolsErrorPreview = createMemo(
+    () => isDevtoolsPreview() && activeQueryState()?.status === 'error',
+  )
+
   const observerCount = createSubscribeToQueryCacheBatcher(
     (queryCache) =>
       queryCache()
@@ -1872,11 +1885,25 @@ const QueryDetails = () => {
       errorType?.initializer(activeQueryVal) ??
       new Error('Unknown error from devtools')
 
+    const currentState = activeQueryVal.state
     activeQueryVal.setState({
       status: 'error' as const,
       fetchStatus: 'idle' as const,
       error,
+      fetchMeta: {
+        ...(currentState.fetchMeta as object),
+        __previousData: currentState.data,
+        __previousStatus: currentState.status,
+      },
     } as Partial<QueryState<unknown, Error>>)
+  }
+
+  const restoreQueryAfterPreview = () => {
+    const query = activeQuery()
+    if (!query) return
+
+    sendDevToolsEvent({ type: 'RESTORE_LOADING', queryHash: query.queryHash })
+    query.setState({ fetchMeta: null })
   }
 
   createEffect(() => {
@@ -2070,12 +2097,28 @@ const QueryDetails = () => {
               'tsqd-query-details-actions-btn',
               'tsqd-query-details-action-loading',
             )}
-            disabled={statusLabel() === 'fetching'}
+            disabled={restoringLoading() || (statusLabel() === 'fetching' && !isDevtoolsLoadingPreview())}
             onClick={() => {
-              const activeQueryVal = activeQuery()
-              if (!activeQueryVal) return
-              sendDevToolsEvent({ type: 'TRIGGER_LOADING', queryHash: activeQueryVal.queryHash })
-              activeQueryVal.fetch()
+              if (isDevtoolsLoadingPreview()) {
+                setRestoringLoading(true)
+                restoreQueryAfterPreview()
+                return
+              }
+
+              const query = activeQuery()
+              if (!query) return
+              const currentState = query.state
+              sendDevToolsEvent({ type: 'TRIGGER_LOADING', queryHash: query.queryHash })
+              query.setState({
+                data: undefined,
+                status: 'pending',
+                fetchStatus: 'fetching',
+                fetchMeta: {
+                  ...(currentState.fetchMeta as object),
+                  __previousData: currentState.data,
+                  __previousStatus: currentState.status,
+                },
+              })
             }}
           >
             <span
@@ -2083,9 +2126,9 @@ const QueryDetails = () => {
                 background-color: ${t(colors.cyan[500], colors.cyan[400])};
               `}
             ></span>
-            Trigger Loading
+            {isDevtoolsLoadingPreview() ? 'Restore' : 'Trigger'} Loading
           </button>
-          <Show when={errorTypes().length === 0}>
+          <Show when={errorTypes().length === 0 || isDevtoolsErrorPreview()}>
             <button
               class={cx(
                 css`
@@ -2095,7 +2138,12 @@ const QueryDetails = () => {
                 'tsqd-query-details-action-error',
               )}
               onClick={() => {
-                triggerError()
+                if (isDevtoolsErrorPreview()) {
+                  setRestoringLoading(true)
+                  restoreQueryAfterPreview()
+                } else {
+                  triggerError()
+                }
               }}
               disabled={restoringLoading()}
             >
@@ -2104,11 +2152,11 @@ const QueryDetails = () => {
                   background-color: ${t(colors.red[500], colors.red[400])};
                 `}
               ></span>
-              Trigger Error
+              {isDevtoolsErrorPreview() ? 'Restore' : 'Trigger'} Error
             </button>
           </Show>
           <Show
-            when={errorTypes().length > 0}
+            when={errorTypes().length > 0 && !isDevtoolsErrorPreview()}
           >
             <div
               class={cx(

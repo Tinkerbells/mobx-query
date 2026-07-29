@@ -1,6 +1,7 @@
-import { computed, makeObservable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 
 import { type StatusStorage } from '../StatusStorage';
+import type { MobxQueryDevtoolsOverride } from '../types';
 
 export type QueryContainerAuxiliary = {
   isIdle: boolean;
@@ -20,54 +21,76 @@ export abstract class QueryContainer<
   TAuxiliary extends QueryContainerAuxiliary,
   TIsBackground extends boolean,
 > implements Statuses<TError> {
+  private devtoolsOverride: MobxQueryDevtoolsOverride<TError> | null = null;
+
   protected constructor(
     private readonly statusStorage: StatusStorage<TError>,
     private readonly backgroundStatusStorage: StatusStorage<TError> | null,
     protected readonly auxiliary: TAuxiliary,
   ) {
     makeObservable(this, {
+      devtoolsOverride: observable.ref,
+      clearDevtoolsOverride: action,
       error: computed,
+      hasDevtoolsOverride: computed,
       isError: computed,
       isIdle: computed,
       isLoading: computed,
       isSuccess: computed,
+      setDevtoolsOverride: action,
       status: computed,
     });
+  }
+
+  /** Applies a DevTools-only status override until `clearDevtoolsOverride`. */
+  public setDevtoolsOverride = (
+    override: MobxQueryDevtoolsOverride<TError>,
+  ) => {
+    this.devtoolsOverride = override;
+  };
+
+  /** Restores the state produced by the query's real executor. */
+  public clearDevtoolsOverride = () => {
+    this.devtoolsOverride = null;
+  };
+
+  public get hasDevtoolsOverride() {
+    return this.devtoolsOverride !== null;
   }
 
   /**
    * Флаг загрузки данных
    */
   public get isLoading() {
-    return this.statusStorage.isLoading;
+    return this.devtoolsOverride?.isLoading ?? this.statusStorage.isLoading;
   }
 
   /**
    * Флаг обозначающий, что последний запрос был зафейлен
    */
   public get isError() {
-    return this.statusStorage.isError;
+    return this.devtoolsOverride?.isError ?? this.statusStorage.isError;
   }
 
   /**
    * Данные о последней ошибке
    */
   public get error() {
-    return this.statusStorage.error;
+    return this.devtoolsOverride?.error ?? this.statusStorage.error;
   }
 
   /**
    * Флаг обозначающий, что последний запрос был успешно завершен
    */
   public get isSuccess() {
-    return this.statusStorage.isSuccess;
+    return this.devtoolsOverride?.isSuccess ?? this.statusStorage.isSuccess;
   }
 
   /**
    * Флаг, обозначающий простаивание, т.е. запроса еще не было
    */
   public get isIdle() {
-    return this.auxiliary.isIdle;
+    return this.devtoolsOverride?.isIdle ?? this.auxiliary.isIdle;
   }
 
   public get status() {

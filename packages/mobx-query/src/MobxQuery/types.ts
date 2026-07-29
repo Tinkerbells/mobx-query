@@ -2,6 +2,7 @@ import { type InfiniteQuery } from '../InfiniteQuery';
 import { type Query } from '../Query';
 import {
   type CacheKey,
+  type MobxQueryDevtoolsOverride,
   type FetchPolicy,
   type MobxQueryDevtoolsState,
 } from '../types';
@@ -33,6 +34,8 @@ export type Keys = {
 
 export type MobxQueryDevtoolsQuery = {
   getDevtoolsState: () => MobxQueryDevtoolsState;
+  setDevtoolsOverride?: (override: MobxQueryDevtoolsOverride) => void;
+  clearDevtoolsOverride?: () => void;
   sync?: () => void;
   invalidate?: () => void;
   fetchMore?: () => void;

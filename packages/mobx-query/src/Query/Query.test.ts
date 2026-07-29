@@ -41,6 +41,51 @@ describe('Query', () => {
     });
   });
 
+  describe('При DevTools override', () => {
+    it('удерживает simulated loading до явного восстановления', async () => {
+      const query = new Query(() => Promise.resolve('foo'), {
+        dataStorage: getDataStorage(),
+        statusStorage: getStatusStorage(),
+      });
+
+      await query.async();
+      query.setDevtoolsOverride({
+        isLoading: true,
+        isSuccess: false,
+        isError: false,
+        isIdle: false,
+      });
+
+      expect(query.isLoading).toBeTruthy();
+      expect(query.isSuccess).toBeFalsy();
+      expect(query.data).toBe('foo');
+
+      query.clearDevtoolsOverride();
+
+      expect(query.isLoading).toBeFalsy();
+      expect(query.isSuccess).toBeTruthy();
+    });
+
+    it('показывает simulated error обычным MobX observers', () => {
+      const error = new Error('DevTools error');
+      const query = new Query(() => Promise.resolve('foo'), {
+        dataStorage: getDataStorage(),
+        statusStorage: getStatusStorage(),
+      });
+
+      query.setDevtoolsOverride({
+        isLoading: false,
+        isSuccess: false,
+        isError: true,
+        isIdle: false,
+        error,
+      });
+
+      expect(query.isError).toBeTruthy();
+      expect(query.error).toBe(error);
+    });
+  });
+
   it('Флаг простаивания false сразу после запуска запроса', () => {
     const query = new Query(() => Promise.resolve('foo'), {
       dataStorage: getDataStorage(),

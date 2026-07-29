@@ -240,6 +240,8 @@ export class Query<
    * и начнется запрос, в результате которого, данные обновятся
    */
   public get data() {
+    if (this.hasDevtoolsOverride) return this.storage.data;
+
     const shouldSync =
       this.enabledAutoFetch &&
       !this.isSuccess &&

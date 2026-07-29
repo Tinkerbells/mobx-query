@@ -13,7 +13,6 @@ export class QueryModel {
   private typeValue: MobxQueryDevtoolsEntry['type']
   private query: MobxQueryDevtoolsQuery
   private metaValue: MobxQueryDevtoolsMeta
-  private devtoolsStateOverride: Partial<MobxQueryDevtoolsState> | null = null
 
   constructor(
     hash: string,
@@ -41,11 +40,7 @@ export class QueryModel {
   }
 
   private get state() {
-    const state = this.query.getDevtoolsState()
-
-    return this.devtoolsStateOverride
-      ? { ...state, ...this.devtoolsStateOverride }
-      : state
+    return this.query.getDevtoolsState()
   }
 
   get data() {
@@ -125,20 +120,19 @@ export class QueryModel {
     this.query.forceUpdate?.(data)
   }
 
-  /**
-   * Applies a devtools-only state preview. It is deliberately kept outside of
-   * the query's real cache/status storage, so debug actions never affect the
-   * running application or trigger a request.
-   */
   public setDevtoolsState(state: Partial<MobxQueryDevtoolsState>) {
-    this.devtoolsStateOverride = {
-      ...this.devtoolsStateOverride,
-      ...state,
-    }
+    const current = this.state
+    this.query.setDevtoolsOverride?.({
+      isLoading: state.isLoading ?? current.isLoading,
+      isSuccess: state.isSuccess ?? current.isSuccess,
+      isError: state.isError ?? current.isError,
+      isIdle: state.isIdle ?? current.isIdle,
+      error: state.error ?? current.error,
+    })
   }
 
   public clearDevtoolsState() {
-    this.devtoolsStateOverride = null
+    this.query.clearDevtoolsOverride?.()
   }
 
   public setIsLoading(value: boolean) {

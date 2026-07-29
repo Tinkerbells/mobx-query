@@ -118,6 +118,7 @@ class StoreQuery implements Query {
     if (isRestoringDevtoolsState) {
       this._fetchMeta = null
       this.model.clearDevtoolsState()
+      queueMicrotask(this.notifyStateChange)
       return
     }
 
@@ -138,6 +139,7 @@ class StoreQuery implements Query {
         isSuccess: nextState.status === 'success',
         isError: nextState.status === 'error',
       })
+      queueMicrotask(this.notifyStateChange)
       return
     }
 
@@ -243,6 +245,7 @@ class StoreQuery implements Query {
   }
   reset() {
     this.invalidated = false
+    this.model.clearDevtoolsState()
     this.model.setData(undefined)
     this.model.setIsError(false)
     this.model.setIsSuccess(false)
@@ -307,7 +310,7 @@ class StoreQueryCache implements QueryCache {
       }
       let proxy!: StoreQuery
       proxy = new StoreQuery(model, () => {
-        this.notify({ type: 'queryUpdated', query: proxy })
+        this.sync()
       })
       next.set(model.hash, proxy)
       this.notify({ type: 'queryAdded', query: proxy })

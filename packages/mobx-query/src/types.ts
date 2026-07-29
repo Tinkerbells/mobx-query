@@ -90,3 +90,15 @@ export type MobxQueryDevtoolsState = {
     error?: unknown;
   };
 };
+
+/**
+ * A temporary state exposed to both DevTools and regular MobX observers.
+ * It is intended for interactive diagnostics and must be cleared explicitly.
+ */
+export type MobxQueryDevtoolsOverride<TError = unknown> = {
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  isIdle: boolean;
+  error?: TError;
+};
