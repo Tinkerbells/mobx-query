@@ -3,6 +3,14 @@ name: Publish existing npm version
 on:
   workflow_dispatch:
     inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        default: mobx-query
+        type: choice
+        options:
+          - mobx-query
+          - mobx-query-devtools
       version:
         description: 'Existing version to publish to npm'
         required: true
@@ -28,7 +36,18 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: RELEASE_TAG=${{ inputs.version }} pnpm --filter @tinkerbells88/mobx-query run build
+        if: inputs.package == 'mobx-query'
       - run: npm publish packages/mobx-query/lib --access public --registry=https://registry.npmjs.org
+        if: inputs.package == 'mobx-query'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm --filter @tinkerbells88/mobx-query run build
+        if: inputs.package == 'mobx-query-devtools'
+      - run: RELEASE_TAG=${{ inputs.version }} pnpm --filter @tinkerbells88/mobx-query-devtools run build
+        if: inputs.package == 'mobx-query-devtools'
+      - run: npm publish packages/devtools/lib --access public --registry=https://registry.npmjs.org
+        if: inputs.package == 'mobx-query-devtools'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

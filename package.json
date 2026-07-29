@@ -9,6 +9,7 @@
     "tests": "turbo run tests",
     "tests:ci": "turbo run tests:ci",
     "release:mobx-query": "semantic-release",
+    "release:devtools": "semantic-release --extends ./packages/devtools/.releaserc.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
