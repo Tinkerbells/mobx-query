@@ -1,4 +1,5 @@
 export * from './MobxQuery';
+
 export type {
   MobxQueryDevtoolsEntry,
   MobxQueryDevtoolsEvent,

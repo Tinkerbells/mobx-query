@@ -2,8 +2,8 @@ import { type InfiniteQuery } from '../InfiniteQuery';
 import { type Query } from '../Query';
 import {
   type CacheKey,
-  type MobxQueryDevtoolsOverride,
   type FetchPolicy,
+  type MobxQueryDevtoolsOverride,
   type MobxQueryDevtoolsState,
 } from '../types';
 

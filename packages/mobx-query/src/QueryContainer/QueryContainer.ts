@@ -28,7 +28,7 @@ export abstract class QueryContainer<
     private readonly backgroundStatusStorage: StatusStorage<TError> | null,
     protected readonly auxiliary: TAuxiliary,
   ) {
-    makeObservable(this, {
+    makeObservable<this, 'devtoolsOverride'>(this, {
       devtoolsOverride: observable.ref,
       clearDevtoolsOverride: action,
       error: computed,

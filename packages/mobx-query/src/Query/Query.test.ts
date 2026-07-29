@@ -49,6 +49,7 @@ describe('Query', () => {
       });
 
       await query.async();
+
       query.setDevtoolsOverride({
         isLoading: true,
         isSuccess: false,
@@ -56,14 +57,21 @@ describe('Query', () => {
         isIdle: false,
       });
 
-      expect(query.isLoading).toBeTruthy();
-      expect(query.isSuccess).toBeFalsy();
-      expect(query.data).toBe('foo');
+      expect({
+        isLoading: query.isLoading,
+        isSuccess: query.isSuccess,
+        data: query.data,
+      }).toEqual({ isLoading: true, isSuccess: false, data: 'foo' });
 
       query.clearDevtoolsOverride();
 
-      expect(query.isLoading).toBeFalsy();
-      expect(query.isSuccess).toBeTruthy();
+      expect({
+        isLoading: query.isLoading,
+        isSuccess: query.isSuccess,
+      }).toEqual({
+        isLoading: false,
+        isSuccess: true,
+      });
     });
 
     it('показывает simulated error обычным MobX observers', () => {

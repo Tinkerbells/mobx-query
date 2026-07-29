@@ -14,7 +14,7 @@
     "tests:ci": "vitest run --passWithNoTests --reporter=junit --outputFile.junit=junit.xml",
     "lint:types": "tsc --noEmit",
     "lint": "eslint --fix --quiet",
-    "lint:all": "eslint \"**/*.{ts,tsx}\" --fix --quiet"
+    "lint:all": "eslint \"src/**/*.{ts,tsx}\" --fix --quiet"
   },
   "dependencies": {
     "@astral/utils": "^1.6.1",
@@ -30,6 +30,7 @@
     "@astral/eslint-config-vitest": "^2.6.3",
     "@astral/prettier-config": "^2.6.4",
     "mobx": "^6.9.0",
+    "typescript": "~5.9.3",
     "tsdown": "^0.17.2",
     "vitest": "^4.0.15",
     "vitest-mock-extended": "^1.3.1"

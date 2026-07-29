@@ -205,7 +205,10 @@ export class MobxQuery<TDefaultError = void> {
 
   private readonly devtoolsEvents: MobxQueryDevtoolsEvent[] = [];
 
-  private readonly devtoolsRetainedQueries = new Map<KeyHash, UnknownCachedQuery>();
+  private readonly devtoolsRetainedQueries = new Map<
+    KeyHash,
+    UnknownCachedQuery
+  >();
 
   private readonly devtoolsMutations = new Map<
     string,
@@ -346,7 +349,12 @@ export class MobxQuery<TDefaultError = void> {
     // чтобы сборщик мусора мог удалить неиспользуемые квери
     this.queriesMap.convertToWeak(keyHash);
     this.pollingService.clean(keyHash);
-    this.publishDevtools({ type: 'invalidated', hash: keyHash, key: this.keys.get(keyHash) });
+
+    this.publishDevtools({
+      type: 'invalidated',
+      hash: keyHash,
+      key: this.keys.get(keyHash),
+    });
   };
 
   /**
@@ -360,9 +368,12 @@ export class MobxQuery<TDefaultError = void> {
     this.keys.forEach((queryKey, hash) => {
       const query = this.queriesMap.get(hash);
 
-      if (!query) return;
+      if (!query) {
+        return;
+      }
 
       const type = 'fetchMore' in query ? 'infinite' : 'query';
+
       entries.push({
         hash,
         key: queryKey.slice(0, -1),
@@ -383,6 +394,7 @@ export class MobxQuery<TDefaultError = void> {
 
       if (!mutation) {
         this.devtoolsMutations.delete(hash);
+
         return;
       }
 
@@ -407,15 +419,22 @@ export class MobxQuery<TDefaultError = void> {
   /** Subscribes to cache-entry changes; call the returned disposer on unmount. */
   public getDevtoolsEvents = () => [...this.devtoolsEvents];
 
-  public subscribeDevtools = (listener: (event: MobxQueryDevtoolsEvent) => void) => {
+  public subscribeDevtools = (
+    listener: (event: MobxQueryDevtoolsEvent) => void,
+  ) => {
     this.devtoolsListeners.add(listener);
+
     this.keys.forEach((_key, hash) => {
       const query = this.queriesMap.get(hash);
-      if (query) this.devtoolsRetainedQueries.set(hash, query);
+
+      if (query) {
+        this.devtoolsRetainedQueries.set(hash, query);
+      }
     });
 
     return () => {
       this.devtoolsListeners.delete(listener);
+
       if (this.devtoolsListeners.size === 0) {
         this.devtoolsRetainedQueries.clear();
         this.publishDevtools({ type: 'released' });
@@ -431,8 +450,13 @@ export class MobxQuery<TDefaultError = void> {
       id: this.devtoolsEvents.length + 1,
       timestamp: Date.now(),
     };
+
     this.devtoolsEvents.push(nextEvent);
-    if (this.devtoolsEvents.length > 200) this.devtoolsEvents.shift();
+
+    if (this.devtoolsEvents.length > 200) {
+      this.devtoolsEvents.shift();
+    }
+
     this.devtoolsListeners.forEach((listener) => listener(nextEvent));
   };
 
@@ -573,21 +597,25 @@ export class MobxQuery<TDefaultError = void> {
     );
 
     this.keys.set(keys.queryKeyHash, keys.queryKey);
+
     this.devtoolsMeta.set(keys.queryKeyHash, {
       fetchPolicy,
       enabledAutoFetch,
       isBackground: Boolean(createParams?.isBackground),
       enabledSynchronization:
-        createParams?.enabledSynchronization ?? this.defaultEnabledSynchronization,
+        createParams?.enabledSynchronization ??
+        this.defaultEnabledSynchronization,
       pollingTime: createParams?.pollingTime,
       retained: this.devtoolsListeners.size > 0,
     });
+
     if (this.devtoolsListeners.size > 0) {
       this.devtoolsRetainedQueries.set(
         keys.queryKeyHash,
         query as CachedQuery<unknown, unknown, false>,
       );
     }
+
     this.publishDevtools({ type: 'created', hash: keys.queryKeyHash, key });
 
     return query;
@@ -712,11 +740,17 @@ export class MobxQuery<TDefaultError = void> {
     });
 
     const hash = `mutation-${this.nextDevtoolsMutationId++}`;
+
     this.devtoolsMutations.set(
       hash,
       new WeakRef(mutation as unknown as Mutation<unknown, unknown, unknown>),
     );
-    this.publishDevtools({ type: 'mutation-created', hash, key: ['mutation', hash] });
+
+    this.publishDevtools({
+      type: 'mutation-created',
+      hash,
+      key: ['mutation', hash],
+    });
 
     return mutation;
   };

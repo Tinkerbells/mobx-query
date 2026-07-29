@@ -75,7 +75,10 @@ export class PollingService {
     [...this.timers.keys()].forEach((key) => {
       globalThis.clearTimeout(this.timers.get(key));
       this.timers.delete(key);
-      this._onEvent?.('paused', key, { targetDate: this.timerDates.get(key)?.targetDate });
+
+      this._onEvent?.('paused', key, {
+        targetDate: this.timerDates.get(key)?.targetDate,
+      });
     });
   };
 
@@ -127,7 +130,11 @@ export class PollingService {
       pollingTime,
       targetDate: Date.now() + pollingTime,
     });
-    this._onEvent?.('scheduled', key, { pollingTime, targetDate: Date.now() + pollingTime });
+
+    this._onEvent?.('scheduled', key, {
+      pollingTime,
+      targetDate: Date.now() + pollingTime,
+    });
 
     if (this.isVisible) {
       this.timers.set(

@@ -69,6 +69,7 @@ export class SynchronizationService {
         statuses: statusStorage?.statuses,
       }),
     );
+
     this._onEvent?.('sent', keys.queryKeyHash);
   };
 }

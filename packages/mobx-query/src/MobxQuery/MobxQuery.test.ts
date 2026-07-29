@@ -354,6 +354,7 @@ describe('MobxQuery', () => {
     const mobxQuery = new MobxQuery({ enabledAutoFetch: true });
 
     mobxQuery.createQuery(['foo'], executor);
+
     const [entry] = mobxQuery.getDevtoolsEntries();
 
     expect(entry?.query.getDevtoolsState().data).toBeUndefined();
@@ -367,8 +368,8 @@ describe('MobxQuery', () => {
 
     mobxQuery.createQuery(['query'], () => Promise.resolve('data'));
     mobxQuery.createMutation(() => Promise.resolve('data'));
-
     expect(listener).toHaveBeenCalledTimes(2);
+
     expect(mobxQuery.getDevtoolsEntries().map(({ type }) => type)).toEqual([
       'query',
       'mutation',
@@ -382,7 +383,9 @@ describe('MobxQuery', () => {
   it('Devtools публикует metadata и историю lifecycle-событий', () => {
     const mobxQuery = new MobxQuery({ enabledAutoFetch: true });
     const events: string[] = [];
-    const dispose = mobxQuery.subscribeDevtools((event) => events.push(event.type));
+    const dispose = mobxQuery.subscribeDevtools((event) =>
+      events.push(event.type),
+    );
 
     mobxQuery.createQuery(['query'], () => Promise.resolve('data'), {
       fetchPolicy: 'network-only',
@@ -392,6 +395,7 @@ describe('MobxQuery', () => {
     });
 
     const [entry] = mobxQuery.getDevtoolsEntries();
+
     expect(entry?.meta).toMatchObject({
       fetchPolicy: 'network-only',
       enabledAutoFetch: true,
@@ -400,10 +404,12 @@ describe('MobxQuery', () => {
       pollingTime: 1000,
       retained: true,
     });
-    expect(events).toContain('created');
-    const devtoolsEvents = mobxQuery.getDevtoolsEvents();
-    expect(devtoolsEvents[devtoolsEvents.length - 1]?.type).toBe('created');
 
+    expect(events).toContain('created');
+
+    const devtoolsEvents = mobxQuery.getDevtoolsEvents();
+
+    expect(devtoolsEvents[devtoolsEvents.length - 1]?.type).toBe('created');
     dispose();
   });
 });
