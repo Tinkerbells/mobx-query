@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.2...devtools-v1.4.0) (2026-07-29)
+
+
+### Features
+
+* **devtools:** add persistent query state overrides ([41538a8](https://github.com/Tinkerbells/mobx-query/commit/41538a8acc9dcf68e48cd3fd5a693d29a2f5ffec))
+
 ## [1.3.2](https://github.com/Tinkerbells/mobx-query/compare/devtools-v1.3.1...devtools-v1.3.2) (2026-07-28)
 
 
