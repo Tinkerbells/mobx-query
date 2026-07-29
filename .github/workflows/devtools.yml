@@ -58,6 +58,10 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+      # @semantic-release/npm validates pkgRoot before its prepare hook, so the
+      # publishable manifest must exist in this clean checkout first.
+      - run: pnpm --filter @tinkerbells88/mobx-query run build
+      - run: pnpm --filter @tinkerbells88/mobx-query-devtools run build
       - run: pnpm run release:devtools
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
